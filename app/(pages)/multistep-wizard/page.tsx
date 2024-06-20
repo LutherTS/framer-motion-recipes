@@ -47,6 +47,9 @@ export default function Page() {
   );
 }
 
+const durationDelay = 0.2;
+const durationIcon = 0.3;
+
 function Step({ step, currentStep }: { step: number; currentStep: number }) {
   /* No idea why TypeScript had issues with the reformatting, even though it worked. Actually it explicitly wants an else like in the ternary, even though mathematically everything was already covered especially within the typing of number for step and currentStep.
   let status: "active" | "inactive" | "complete";
@@ -63,47 +66,77 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
         : "complete";
 
   return (
-    <motion.div
-      initial={false}
-      /* Conditions now passed onto variants.
-      animate={{
-        backgroundColor:
-          status === "complete" ? "var(--blue-500)" : "var(--white)",
-        borderColor:
-          status === "complete" || status === "active"
-            ? "var(--blue-500)"
-            : "var(--slate-200)",
-        color: status === "active" ? "var(--blue-500)" : "var(--slate-400)",
-      }}
-      */
-      animate={status}
-      variants={{
-        active: {
-          backgroundColor: "var(--white)",
-          borderColor: "var(--blue-500)",
-          color: "var(--blue-500)",
-        },
-        inactive: {
-          backgroundColor: "var(--white)",
-          borderColor: "var(--slate-200)",
-          color: "var(--slate-400)",
-        },
-        complete: {
-          backgroundColor: "var(--blue-500)",
-          borderColor: "var(--blue-500)",
-          color: "var(--slate-400)",
-        },
-      }}
-      transition={undefined}
-      className="flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold"
-    >
-      <div className="flex items-center justify-center">
-        {status === "complete" ? (
-          <CheckIcon className="h-6 w-6 text-white" />
-        ) : (
-          <span>{step}</span>
-        )}
-      </div>
+    <motion.div animate={status} className="relative">
+      <motion.div
+        className="absolute inset-0 rounded-full bg-blue-200"
+        initial={false}
+        variants={{
+          active: {
+            scale: 1.0,
+            // opacity: 1,
+            /* not specifying transition back to active uses all defaults */
+            transition: {
+              duration: durationIcon,
+            },
+          },
+          /* impossible to reach "complete" via "inactive", only via "active"
+          inactive: {
+            scale: 1.0,
+          },
+          */
+          complete: {
+            scale: 1.25,
+            // opacity: 0,
+            transition: {
+              delay: durationDelay,
+              duration: durationIcon * 2,
+              type: "tween",
+              ease: "circOut",
+            },
+          },
+        }}
+      />
+      <motion.div
+        initial={false}
+        /* Conditions now passed onto variants.
+        animate={{
+          backgroundColor:
+            status === "complete" ? "var(--blue-500)" : "var(--white)",
+          borderColor:
+            status === "complete" || status === "active"
+              ? "var(--blue-500)"
+              : "var(--slate-200)",
+          color: status === "active" ? "var(--blue-500)" : "var(--slate-400)",
+        }}
+        */
+        variants={{
+          active: {
+            backgroundColor: "var(--white)",
+            borderColor: "var(--blue-500)",
+            color: "var(--blue-500)",
+          },
+          inactive: {
+            backgroundColor: "var(--white)",
+            borderColor: "var(--slate-200)",
+            color: "var(--slate-400)",
+          },
+          complete: {
+            backgroundColor: "var(--blue-500)",
+            borderColor: "var(--blue-500)",
+            color: "var(--slate-400)",
+          },
+        }}
+        transition={{ duration: durationDelay }}
+        className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold"
+      >
+        <div className="flex items-center justify-center">
+          {status === "complete" ? (
+            <CheckIcon className="h-6 w-6 text-white" />
+          ) : (
+            <span>{step}</span>
+          )}
+        </div>
+      </motion.div>
     </motion.div>
   );
 }
@@ -117,7 +150,19 @@ function CheckIcon(props: any) {
       stroke="currentColor"
       strokeWidth={3}
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      <motion.path
+        initial={{ pathLength: 0, opacity: 0 }} // added opacity work here
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{
+          delay: durationDelay,
+          duration: durationIcon,
+          type: "tween",
+          ease: "easeOut",
+        }}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   );
 }
