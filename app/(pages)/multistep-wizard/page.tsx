@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-export default function Page() {
+export default function MultistepWizardPage() {
   let [step, setStep] = useState(1);
 
   return (
@@ -66,7 +66,10 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
         : "complete";
 
   return (
-    <motion.div animate={status} className="relative">
+    <motion.div
+      animate={status}
+      className="relative mx-[0.3125rem] mt-[0.3125rem]"
+    >
       <motion.div
         className="absolute inset-0 rounded-full bg-blue-200"
         initial={false}
@@ -127,11 +130,11 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
           },
         }}
         transition={{ duration: durationDelay }}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold"
+        className="relative flex size-10 items-center justify-center rounded-full border-2 font-semibold"
       >
         <div className="flex items-center justify-center">
           {status === "complete" ? (
-            <CheckIcon className="h-6 w-6 text-white" />
+            <CheckIcon className="size-6 text-white" />
           ) : (
             <span>{step}</span>
           )}
