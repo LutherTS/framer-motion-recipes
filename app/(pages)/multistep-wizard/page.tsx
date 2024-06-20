@@ -48,6 +48,13 @@ export default function Page() {
 }
 
 function Step({ step, currentStep }: { step: number; currentStep: number }) {
+  /* No idea why TypeScript had issues with the reformatting, even though it worked. Actually it explicitly wants an else like in the ternary, even though mathematically everything was already covered especially within the typing of number for step and currentStep.
+  let status: "active" | "inactive" | "complete";
+  if (currentStep === step) status = "active";
+  else if (currentStep < step) status = "inactive";
+  else status = "complete"; // (currentStep > step)
+  */
+
   let status: "active" | "inactive" | "complete" =
     currentStep === step
       ? "active"
@@ -58,6 +65,7 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
   return (
     <motion.div
       initial={false}
+      /* Conditions now passed onto variants.
       animate={{
         backgroundColor:
           status === "complete" ? "var(--blue-500)" : "var(--white)",
@@ -66,6 +74,25 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
             ? "var(--blue-500)"
             : "var(--slate-200)",
         color: status === "active" ? "var(--blue-500)" : "var(--slate-400)",
+      }}
+      */
+      animate={status}
+      variants={{
+        active: {
+          backgroundColor: "var(--white)",
+          borderColor: "var(--blue-500)",
+          color: "var(--blue-500)",
+        },
+        inactive: {
+          backgroundColor: "var(--white)",
+          borderColor: "var(--slate-200)",
+          color: "var(--slate-400)",
+        },
+        complete: {
+          backgroundColor: "var(--blue-500)",
+          borderColor: "var(--blue-500)",
+          color: "var(--slate-400)",
+        },
       }}
       transition={undefined}
       className="flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold"
