@@ -28,15 +28,15 @@ export default function Page() {
           <div className="mt-10 flex justify-between">
             <button
               onClick={() => setStep(step < 2 ? step : step - 1)}
-              className="rounded px-2 py-1 text-slate-400 hover:text-slate-700"
+              className={`rounded px-2 py-1 text-slate-400 ${step === 1 ? "pointer-events-none" : "hover:text-slate-700"}`}
             >
               Back
             </button>
             <button
               onClick={() => setStep(step > 4 ? step : step + 1)}
-              className={`${
+              className={`flex items-center justify-center rounded-full bg-blue-500 px-3.5 py-1.5 font-medium tracking-tight text-white hover:bg-blue-600 active:bg-blue-700 ${
                 step > 4 ? "pointer-events-none opacity-50" : ""
-              } bg flex items-center justify-center rounded-full bg-blue-500 px-3.5 py-1.5 font-medium tracking-tight text-white hover:bg-blue-600 active:bg-blue-700`}
+              }`}
             >
               Continue
             </button>
@@ -57,17 +57,18 @@ function Step({ step, currentStep }: { step: number; currentStep: number }) {
 
   return (
     <motion.div
+      initial={false}
       animate={{
         backgroundColor:
           status === "complete" ? "var(--blue-500)" : "var(--white)",
+        borderColor:
+          status === "complete" || status === "active"
+            ? "var(--blue-500)"
+            : "var(--slate-200)",
+        color: status === "active" ? "var(--blue-500)" : "var(--slate-400)",
       }}
-      className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold ${
-        status === "active"
-          ? "border-blue-500 bg-white text-blue-500"
-          : status === "complete"
-            ? "border-blue-500 bg-blue-500"
-            : "border-slate-200 bg-white text-slate-400"
-      }`}
+      transition={undefined}
+      className="flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold"
     >
       <div className="flex items-center justify-center">
         {status === "complete" ? (
@@ -97,4 +98,5 @@ function CheckIcon(props: any) {
 /* Notes
 Because this is simply a tutorial, I'm making the full page a client component. For now. But this is not how I am meant to operate. 
 Also normally I I would import the Step and CheckIcon components from different files, but again, not for the sake of this tutorial.
+Core lesson here: if you're going to really go hard on animate, conditional classes are better off shifted onto FramerMotion's animate.
 */
