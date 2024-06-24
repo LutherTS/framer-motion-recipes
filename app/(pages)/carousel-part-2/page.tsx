@@ -20,12 +20,7 @@ export default function Page() {
       <div className="flex min-h-screen items-center bg-black">
         <div className="mx-auto flex h-full max-w-7xl flex-col justify-center">
           <div className="relative overflow-hidden">
-            <motion.div
-              className="flex"
-              animate={{ x: `-${index * 100}%` }}
-              // transition={{ duration: 0.5, ease: "easeInOut" }}
-              // transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}
-            >
+            <motion.div className="flex" animate={{ x: `-${index * 100}%` }}>
               {images.map((imageUrl) => {
                 return (
                   <img
@@ -36,26 +31,10 @@ export default function Page() {
                 );
               })}
             </motion.div>
-            {/* <img
-            src={images[index]}
-            className="aspect-[3/2] w-full object-cover"
-          /> */}
 
             <AnimatePresence initial={false}>
               {index > 0 && (
                 <>
-                  {/* <motion.button
-                  initial={{
-                    opacity: 0,
-                  }}
-                  animate={{ opacity: 0.6 }}
-                  exit={{ opacity: 0, pointerEvents: "none" }}
-                  whileHover={{ opacity: 0.8 }}
-                  className="absolute left-2 top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white"
-                  onClick={() => setIndex(index - 1)}
-                >
-                  <ChevronLeftIcon />
-                </motion.button> */}
                   <ChevronButton
                     isLeft={true}
                     handleClick={() => setIndex(index - 1)}
@@ -68,15 +47,6 @@ export default function Page() {
 
             <AnimatePresence initial={false}>
               {index + 1 < images.length && (
-                // <motion.button
-                //   initial={{ opacity: 0 }}
-                //   animate={{ opacity: 1 }}
-                //   exit={{ opacity: 0 }}
-                //   className="absolute right-2 top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white/60 transition hover:bg-white/80"
-                //   onClick={() => setIndex(index + 1)}
-                // >
-                //   <ChevronRightIcon />
-                // </motion.button>
                 <ChevronButton
                   isLeft={false}
                   handleClick={() => setIndex(index + 1)}
@@ -147,6 +117,7 @@ function ChevronButton({
       animate={{ opacity: 0.6 }}
       exit={{ opacity: 0, pointerEvents: "none" }}
       whileHover={{ opacity: 0.8 }}
+      whileTap={{ scale: 0.9, transition: {} }}
       className={`absolute top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-2" : "right-2"}`}
       onClick={handleClick}
     >
