@@ -116,14 +116,6 @@ export default function Page() {
                   <motion.button
                     key={imageUrl}
                     initial={false}
-                    // when wanting to use dynamic wildcard Tailwind classes, try to just go with inline style instead
-                    // even better, it all animated just by changing style to animate, so pretty much if a class is going to be dynamic, you're better off having in on style for in-between animations
-                    // animate={{
-                    //   aspectRatio:
-                    //     index === i ? fullAspectRatio : collapsedAspectRatio,
-                    //   marginLeft: index === i ? `${fullMargin}%` : 0,
-                    //   marginRight: index === i ? `${fullMargin}%` : 0,
-                    // }}
                     animate={image}
                     whileHover={imageHover}
                     whileTap={imageTap}
@@ -229,9 +221,3 @@ function ChevronButton({
     </motion.button>
   );
 }
-
-/* Notes
-(Definitely something I could use with Isekai Harem Paradise...)
-When I'll be more experienced, perhaps even at the end of the course, I'll be able to add a drag functionality.
-https://www.framer.com/motion/gestures/#drag
-*/

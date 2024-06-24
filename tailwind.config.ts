@@ -40,7 +40,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [addVariablesForColors],
+  plugins: [addVariablesForColors, require("@tailwindcss/forms")],
 };
 
 /* original function statement before arrow function above
