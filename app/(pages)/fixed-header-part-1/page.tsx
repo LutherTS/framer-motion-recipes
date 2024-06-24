@@ -8,8 +8,11 @@ import {
   // useTransform,
 } from "framer-motion";
 
-export default function FixedHeaderPage() {
-  let { scrollY } = useScroll();
+export default function FixedHeaderPart1Page() {
+  let {
+    scrollY,
+    scrollYProgress, // for additional testing
+  } = useScroll();
   let height = useMotionValue(80);
 
   // my take on opacity
@@ -35,6 +38,11 @@ export default function FixedHeaderPage() {
     // it works but I can't manually make it match with the height animations
     let newNavOpacity = navOpacity.get() - diff * 0.03;
     navOpacity.set(Math.min(Math.max(newNavOpacity, 0), 1));
+  });
+
+  // that's the progress of the page, it's unrelated
+  useMotionValueEvent(scrollYProgress, "change", (latestValue) => {
+    console.log({ latestValue });
   });
 
   return (
