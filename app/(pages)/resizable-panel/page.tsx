@@ -23,6 +23,7 @@ export default function ResizablePanel() {
               <Form
                 onSubmit={async () => await delay(1000)}
                 afterSave={() => setStatus("success")}
+                // @ts-ignore
                 className="p-8"
               >
                 <p className="text-sm text-zinc-400">
@@ -59,12 +60,22 @@ export default function ResizablePanel() {
   );
 }
 
+// @ts-ignore
 let formContext = createContext();
 
-function Form({ onSubmit, afterSave, children, ...props }) {
+function Form({
+  onSubmit,
+  afterSave,
+  children,
+  ...props
+}: {
+  onSubmit: any;
+  afterSave: any;
+  children: React.ReactNode;
+}) {
   let [status, setStatus] = useState("idle");
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: any) {
     e.preventDefault();
     setStatus("saving");
     await onSubmit();
@@ -82,7 +93,15 @@ function Form({ onSubmit, afterSave, children, ...props }) {
   );
 }
 
-Form.Button = function FormButton({ children, className, ...rest }) {
+Form.Button = function FormButton({
+  children,
+  className,
+  ...rest
+}: {
+  children: React.ReactNode;
+  className: string;
+}) {
+  // @ts-ignore
   let { status } = useContext(formContext);
 
   let disabled = status !== "idle";
@@ -127,7 +146,7 @@ Form.Button = function FormButton({ children, className, ...rest }) {
   );
 };
 
-function Spinner({ className, ...rest }) {
+function Spinner({ className, ...rest }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -220,7 +239,7 @@ function Spinner({ className, ...rest }) {
   );
 }
 
-async function delay(ms) {
+async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
