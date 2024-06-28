@@ -65,6 +65,8 @@ export default function FixedHeaderPartCleanedPage() {
   });
   // https://youtu.be/qc2kQcicNNc?si=pxr0YyCu5THWIJBB&t=320
 
+  let { scrollYProgress } = useScroll();
+
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 overflow-hidden font-sans text-slate-600">
       <div className="z-0 flex-1 overflow-y-scroll">
@@ -115,9 +117,14 @@ export default function FixedHeaderPartCleanedPage() {
                 <p className="h-4 w-4/6 rounded bg-slate-200" />
               </div>
             ))}
+            <div className="h-8"></div>
           </div>
         </main>
       </div>
+      <motion.div
+        className="fixed inset-x-0 bottom-0 h-2 origin-left bg-red-500"
+        style={{ scaleX: scrollYProgress }}
+      ></motion.div>
     </div>
   );
 }
