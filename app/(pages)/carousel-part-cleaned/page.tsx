@@ -40,12 +40,16 @@ let fullMargin = 12 - gap;
 export default function Page() {
   let [index, setIndex] = useState(0);
 
-  useKeypress("ArrowLeft", () => {
-    if (index > 0) setIndex(index - 1);
+  useKeypress("ArrowLeft", (event: KeyboardEvent) => {
+    if (index > 0)
+      if (event.shiftKey) setIndex(Math.max(0, index - 10));
+      else setIndex(index - 1);
   });
 
-  useKeypress("ArrowRight", () => {
-    if (index < images.length - 1) setIndex(index + 1);
+  useKeypress("ArrowRight", (event: KeyboardEvent) => {
+    if (index < images.length - 1)
+      if (event.shiftKey) setIndex(Math.min(images.length - 1, index + 10));
+      else setIndex(index + 1);
   });
 
   return (
