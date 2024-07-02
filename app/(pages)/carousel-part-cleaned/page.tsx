@@ -53,7 +53,7 @@ export default function Page() {
   });
 
   return (
-    <div className="flex min-h-screen items-center bg-black">
+    <div className="flex max-h-screen items-center overflow-y-hidden bg-black">
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
         <div className="mx-auto flex h-full max-w-7xl flex-col justify-center">
           <div className="relative overflow-hidden">
