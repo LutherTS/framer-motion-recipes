@@ -10,16 +10,24 @@ let collapsedAspectRatio = 1 / 3;
 let gap = 4;
 let fullMargin = 12 - gap;
 
-export default function Carousel({ images }: { images: string[] }) {
+export default function Carousel({
+  images,
+  objectFit,
+}: {
+  images: string[];
+  objectFit?: "cover" | "contain";
+}) {
   let [index, setIndex] = useState(0);
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
+    event.preventDefault();
     if (index > 0)
       if (event.shiftKey) setIndex(Math.max(0, index - 10));
       else setIndex(index - 1);
   });
 
   useKeypress("ArrowRight", (event: KeyboardEvent) => {
+    event.preventDefault();
     if (index < images.length - 1)
       if (event.shiftKey) setIndex(Math.min(images.length - 1, index + 10));
       else setIndex(index + 1);
@@ -27,14 +35,17 @@ export default function Carousel({ images }: { images: string[] }) {
 
   return (
     <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-      <div className="mx-auto flex h-full max-w-7xl flex-col justify-center">
+      <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-center">
         <div className="relative overflow-hidden">
-          <motion.div className="flex" animate={{ x: `-${index * 100}%` }}>
+          <motion.div
+            className="flex h-screen items-center"
+            animate={{ x: `-${index * 100}%` }}
+          >
             {images.map((imageUrl, i) => {
               let image = index === i ? "full" : "collapsed";
 
               return (
-                <motion.img
+                <motion.div
                   animate={image}
                   variants={{
                     full: {},
@@ -44,8 +55,14 @@ export default function Carousel({ images }: { images: string[] }) {
                   }}
                   key={imageUrl}
                   src={imageUrl}
-                  className="aspect-[3/2] object-cover"
-                />
+                  className="flex h-full w-[80rem] shrink-0 items-center justify-center"
+                  // magic w-[80rem] matching max-w-7xl above
+                >
+                  <img
+                    src={imageUrl}
+                    className={`h-full w-full ${objectFit === "contain" ? "object-contain" : "object-cover"}`}
+                  />
+                </motion.div>
               );
             })}
           </motion.div>
@@ -74,9 +91,14 @@ export default function Carousel({ images }: { images: string[] }) {
             )}
           </AnimatePresence>
         </div>
-        <div className="absolute inset-x-0 bottom-6 flex h-14 justify-center">
+        <div
+          className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden"
+          // no overflow-x-auto because it messes up the calculations
+          // and I'm actually not down with scrolling though, I'd rather Shift does the speeding
+        >
           <motion.div
             initial={false}
+            // ...There COULD a way to handle all the math with layout... I think.
             animate={{
               x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
             }}
@@ -89,7 +111,7 @@ export default function Carousel({ images }: { images: string[] }) {
               let imageTap = index === i ? "fullTap" : "collapsedTap";
 
               return (
-                <motion.button
+                <motion.div
                   key={imageUrl}
                   initial={false}
                   animate={image}
@@ -119,11 +141,37 @@ export default function Carousel({ images }: { images: string[] }) {
                       transition: { duration: 0.1 },
                     },
                   }}
-                  className="shrink-0"
-                  onClick={() => setIndex(i)}
+                  className="flex shrink-0 justify-center"
                 >
-                  <img src={imageUrl} className={`h-full object-cover`} />
-                </motion.button>
+                  {objectFit === "contain" ? (
+                    <img
+                      src={imageUrl}
+                      className="h-full cursor-pointer object-cover"
+                      onClick={() => setIndex(i)}
+                    />
+                  ) : (
+                    <button
+                      className={`h-full w-full bg-cover bg-center`}
+                      style={{
+                        backgroundImage: `url("${imageUrl}")`,
+                      }}
+                      onClick={() => setIndex(i)}
+                    />
+                  )}
+                  {/* <img
+                    src={imageUrl}
+                    className="h-full cursor-pointer object-cover"
+                    onClick={() => setIndex(i)}
+                  /> */}
+                  {/* another solution, covering the whole aspect-ratio */}
+                  {/* <button
+                    className={`h-full w-full bg-cover bg-center`}
+                    style={{
+                      backgroundImage: `url("${imageUrl}")`,
+                    }}
+                    onClick={() => setIndex(i)}
+                  /> */}
+                </motion.div>
               );
             })}
           </motion.div>
@@ -203,4 +251,18 @@ Something like:
 import * as fs from "node:fs";
 const directory = "./images";
 fs.readdir(directory, (error: NodeJS.ErrnoException | null, files: string[]) => console.log(files.length));
+...
+In order to use this carousel as I intend to, with images of a fixed height or even with different yet-to-be defined ambitions altogether, I'll have to genuinely start it and think it from scratch. 
+Nope. Done.
+className="h-full w-[70rem]" // It's like I can't declare a width that goes beyond the image's natural aspect ratio.
+...
+So. 
+What's next is: 
+1. Two-finger swiping, with animations and setIndex at threshold.
+2. A thought on responsiveness.
+3. And maybe actually... turn that img into a button.
+className="flex shrink-0 justify-center"
+There's a lot I could work on again. I guess I'll just do so while experimenting.
+But now I understand better how to work on the front. It is a painstaking process, just don't let videos fool you, they only show you the part where they already did the work. Frontend is just like backend, simply that since it's visual the lack of reward is more painful to bear. 
+Long story short, this too takes time. 
 */
