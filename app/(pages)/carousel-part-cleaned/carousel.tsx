@@ -18,6 +18,7 @@ export default function Carousel({
   objectFit?: "cover" | "contain";
 }) {
   let [index, setIndex] = useState(0);
+  let [noDistractions, setNoDistractions] = useState(false);
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
     event.preventDefault();
@@ -32,6 +33,23 @@ export default function Carousel({
       if (event.shiftKey) setIndex(Math.min(images.length - 1, index + 10));
       else setIndex(index + 1);
   });
+
+  useKeypress("ArrowUp", (event: KeyboardEvent) => {
+    event.preventDefault();
+    if (event.shiftKey) setIndex(0);
+  });
+
+  useKeypress("ArrowDown", (event: KeyboardEvent) => {
+    event.preventDefault();
+    if (event.shiftKey) setIndex(images.length - 1);
+  });
+
+  useKeypress("Backspace", (event: KeyboardEvent) => {
+    event.preventDefault();
+    setNoDistractions(!noDistractions);
+  });
+
+  console.log(noDistractions);
 
   return (
     <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
@@ -67,115 +85,108 @@ export default function Carousel({
             })}
           </motion.div>
 
-          <AnimatePresence initial={false}>
-            {index > 0 && (
-              <>
+          {!noDistractions && (
+            <AnimatePresence initial={false}>
+              {index > 0 && (
+                <>
+                  <ChevronButton
+                    isLeft={true}
+                    handleClick={() => setIndex(index - 1)}
+                  >
+                    <ChevronLeftIcon />
+                  </ChevronButton>
+                </>
+              )}
+            </AnimatePresence>
+          )}
+
+          {!noDistractions && (
+            <AnimatePresence initial={false}>
+              {index + 1 < images.length && (
                 <ChevronButton
-                  isLeft={true}
-                  handleClick={() => setIndex(index - 1)}
+                  isLeft={false}
+                  handleClick={() => setIndex(index + 1)}
                 >
-                  <ChevronLeftIcon />
+                  <ChevronRightIcon />
                 </ChevronButton>
-              </>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence initial={false}>
-            {index + 1 < images.length && (
-              <ChevronButton
-                isLeft={false}
-                handleClick={() => setIndex(index + 1)}
-              >
-                <ChevronRightIcon />
-              </ChevronButton>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          )}
         </div>
-        <div
-          className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden"
-          // no overflow-x-auto because it messes up the calculations
-          // and I'm actually not down with scrolling though, I'd rather Shift does the speeding
-        >
-          <motion.div
-            initial={false}
-            // ...There COULD a way to handle all the math with layout... I think.
-            animate={{
-              x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
-            }}
-            style={{ aspectRatio: fullAspectRatio, gap: `${gap}%` }}
-            className="flex"
+        {!noDistractions && (
+          <div
+            className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden"
+            // no overflow-x-auto because it messes up the calculations
+            // and I'm actually not down with scrolling though, I'd rather Shift does the speeding
           >
-            {images.map((imageUrl, i) => {
-              let image = index === i ? "full" : "collapsed";
-              let imageHover = index === i ? "fullHover" : "collapsedHover";
-              let imageTap = index === i ? "fullTap" : "collapsedTap";
+            <motion.div
+              initial={false}
+              // ...There COULD a way to handle all the math with layout... I think.
+              animate={{
+                x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
+              }}
+              style={{ aspectRatio: fullAspectRatio, gap: `${gap}%` }}
+              className="flex"
+            >
+              {images.map((imageUrl, i) => {
+                let image = index === i ? "full" : "collapsed";
+                let imageHover = index === i ? "fullHover" : "collapsedHover";
+                let imageTap = index === i ? "fullTap" : "collapsedTap";
 
-              return (
-                <motion.div
-                  key={imageUrl}
-                  initial={false}
-                  animate={image}
-                  whileHover={imageHover}
-                  whileTap={imageTap}
-                  variants={{
-                    full: {
-                      aspectRatio: fullAspectRatio,
-                      marginLeft: `${fullMargin}%`,
-                      marginRight: `${fullMargin}%`,
-                      opacity: 1,
-                    },
-                    collapsed: {
-                      aspectRatio: collapsedAspectRatio,
-                      marginLeft: 0,
-                      marginRight: 0,
-                      opacity: 0.5,
-                    },
-                    fullHover: {},
-                    collapsedHover: {
-                      opacity: 0.8,
-                      transition: { duration: 0.1 },
-                    },
-                    fullTap: {},
-                    collapsedTap: {
-                      opacity: 0.9,
-                      transition: { duration: 0.1 },
-                    },
-                  }}
-                  className="flex shrink-0 justify-center"
-                >
-                  {objectFit === "contain" ? (
-                    <img
-                      src={imageUrl}
-                      className="h-full cursor-pointer object-cover"
-                      onClick={() => setIndex(i)}
-                    />
-                  ) : (
-                    <button
-                      className={`h-full w-full bg-cover bg-center`}
-                      style={{
-                        backgroundImage: `url("${imageUrl}")`,
-                      }}
-                      onClick={() => setIndex(i)}
-                    />
-                  )}
-                  {/* <img
-                    src={imageUrl}
-                    className="h-full cursor-pointer object-cover"
-                    onClick={() => setIndex(i)}
-                  /> */}
-                  {/* another solution, covering the whole aspect-ratio */}
-                  {/* <button
-                    className={`h-full w-full bg-cover bg-center`}
-                    style={{
-                      backgroundImage: `url("${imageUrl}")`,
+                return (
+                  <motion.div
+                    key={imageUrl}
+                    initial={false}
+                    animate={image}
+                    whileHover={imageHover}
+                    whileTap={imageTap}
+                    variants={{
+                      full: {
+                        aspectRatio: fullAspectRatio,
+                        marginLeft: `${fullMargin}%`,
+                        marginRight: `${fullMargin}%`,
+                        opacity: 1,
+                      },
+                      collapsed: {
+                        aspectRatio: collapsedAspectRatio,
+                        marginLeft: 0,
+                        marginRight: 0,
+                        opacity: 0.5,
+                      },
+                      fullHover: {},
+                      collapsedHover: {
+                        opacity: 0.8,
+                        transition: { duration: 0.1 },
+                      },
+                      fullTap: {},
+                      collapsedTap: {
+                        opacity: 0.9,
+                        transition: { duration: 0.1 },
+                      },
                     }}
-                    onClick={() => setIndex(i)}
-                  /> */}
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
+                    className="flex shrink-0 justify-center"
+                  >
+                    {objectFit === "contain" ? (
+                      <img
+                        src={imageUrl}
+                        className="h-full cursor-pointer object-cover"
+                        onClick={() => setIndex(i)}
+                      />
+                    ) : (
+                      <button
+                        className={`h-full w-full bg-cover bg-center`}
+                        style={{
+                          backgroundImage: `url("${imageUrl}")`,
+                        }}
+                        onClick={() => setIndex(i)}
+                      />
+                    )}
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
+        )}
       </div>
     </MotionConfig>
   );
