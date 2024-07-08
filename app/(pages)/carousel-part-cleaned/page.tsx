@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 
 import Carousel from "./carousel";
 
-const directory = "./public/images6";
+const directory = "./public/images7";
 const files = fs.readdirSync(directory);
 
 const directoryPath = directory.split("/").slice(2).join("/");
