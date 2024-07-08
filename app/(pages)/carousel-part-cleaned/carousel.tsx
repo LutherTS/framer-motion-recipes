@@ -49,7 +49,7 @@ export default function Carousel({
     setNoDistractions(!noDistractions);
   });
 
-  console.log(noDistractions);
+  // console.log(noDistractions);
 
   return (
     <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
