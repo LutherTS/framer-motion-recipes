@@ -29,3 +29,10 @@ export default function RootLayout({
     </html>
   );
 }
+
+/* Notes
+npm install @flydotio/dockerfile --save-dev --legacy-peer-deps
+npx @flydotio/dockerfile --legacy-peer-deps
+To deal with Next.js 15 RC React 19 RC --force issues.
+https://community.fly.io/t/cant-launch-a-next-js-15-rc-react-19-rc-app/20915
+*/

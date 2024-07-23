@@ -1,12 +1,14 @@
-import * as fs from "node:fs";
+// import * as fs from "node:fs";
 
 import Carousel from "./carousel";
 
-const directory = "./public/images7";
-const files = fs.readdirSync(directory);
+let images: string[];
 
-const directoryPath = directory.split("/").slice(2).join("/");
-let images = files.map((filePath) => `/${directoryPath}/${filePath}`);
+// const directory = "./public/images7";
+// const files = fs.readdirSync(directory);
+
+// const directoryPath = directory.split("/").slice(2).join("/");
+// images = files.map((filePath) => `/${directoryPath}/${filePath}`);
 
 /* Sorting numerically. All files need to have a number format, and should only be of an image format, with no folders inside. Since this is a personal and internal project, I'm not going to handle errors for now. */
 // const imagesForSorting: [string, number][] = images.map((e) => [
