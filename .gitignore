@@ -34,3 +34,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# testing images
+/app/public/images2
+/app/public/images3
+/app/public/images4
+/app/public/images5
+/app/public/images6
+/app/public/images7

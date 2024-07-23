@@ -8,14 +8,14 @@ const files = fs.readdirSync(directory);
 const directoryPath = directory.split("/").slice(2).join("/");
 let images = files.map((filePath) => `/${directoryPath}/${filePath}`);
 
-// /* Sorting numerically. All files need to have a number format, and should only be of an image format, with no folders inside. Since this is a personal and internal project, I'm not going to handle errors for now. */
+/* Sorting numerically. All files need to have a number format, and should only be of an image format, with no folders inside. Since this is a personal and internal project, I'm not going to handle errors for now. */
 // const imagesForSorting: [string, number][] = images.map((e) => [
 //   e,
 //   +e.split("/").at(-1)?.split(".").at(0)!,
 // ]);
 // imagesForSorting.sort((a, b) => a[1] - b[1]);
 // images = imagesForSorting.map((e) => e[0]);
-// // console.log(images);
+// console.log(images);
 
 /* Replacing the copypasted multiple images. */
 const imagesDynamized = (x: number) => {

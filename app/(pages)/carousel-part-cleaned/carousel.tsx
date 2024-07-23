@@ -48,12 +48,14 @@ export default function Carousel({
     event.preventDefault();
     setNoDistractions(!noDistractions);
   });
-
   // console.log(noDistractions);
 
   return (
     <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-      <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-center">
+      <div
+        className="relative mx-auto flex h-full flex-col justify-center"
+        onTouchStart={() => console.log("start")}
+      >
         <div className="relative overflow-hidden">
           <motion.div
             className="flex h-screen items-center"
@@ -73,8 +75,7 @@ export default function Carousel({
                   }}
                   key={imageUrl}
                   src={imageUrl}
-                  className="flex h-full w-[80rem] shrink-0 items-center justify-center"
-                  // magic w-[80rem] matching max-w-7xl above
+                  className="flex h-full w-full shrink-0 items-center justify-center"
                 >
                   <img
                     src={imageUrl}
@@ -114,14 +115,9 @@ export default function Carousel({
           )}
         </div>
         {!noDistractions && (
-          <div
-            className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden"
-            // no overflow-x-auto because it messes up the calculations
-            // and I'm actually not down with scrolling though, I'd rather Shift does the speeding
-          >
+          <div className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden">
             <motion.div
               initial={false}
-              // ...There COULD a way to handle all the math with layout... I think.
               animate={{
                 x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
               }}
@@ -248,7 +244,7 @@ function ChevronButton({
       exit={{ opacity: 0, pointerEvents: "none" }}
       whileHover={{ opacity: 0.8 }}
       whileTap={{ scale: 0.9, transition: {} }}
-      className={`absolute top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-2" : "right-2"}`}
+      className={`absolute top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-1.5" : "right-1.5"}`}
       onClick={handleClick}
     >
       {children}
@@ -276,4 +272,16 @@ className="flex shrink-0 justify-center"
 There's a lot I could work on again. I guess I'll just do so while experimenting.
 But now I understand better how to work on the front. It is a painstaking process, just don't let videos fool you, they only show you the part where they already did the work. Frontend is just like backend, simply that since it's visual the lack of reward is more painful to bear. 
 Long story short, this too takes time. 
+Previous inline comments:
+That responsive width is going to be complicated, but not impossible. The buttons are still rightfully placed at w-64 for example, and the animate x does move to 100% the size of the images, but now it's the images whose size is not being responsive (Well, with full on images just worked just fine.)
+I'll have to test but... Now problem solved.
+magic w-[80rem] matching max-w-7xl above
+w-full fixed all of my responsive problems it seems
+no overflow-x-auto because it messes up the calculations
+and I'm actually not down with scrolling though, I'd rather Shift does the speeding
+...
+Well, my work here is done. Apple trackpad does not finger touch events.
+https://forums.developer.apple.com/forums/thread/88109
+https://www.reddit.com/r/learnjavascript/comments/18qer5x/how_to_detect_when_the_user_starts_and_ends/
+Remove max-w-7xl. "left-1.5" : "right-1.5" instead of 2.
 */
