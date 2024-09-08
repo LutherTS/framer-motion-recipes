@@ -68,6 +68,7 @@ export default function Page() {
                     }}
                     key={imageUrl}
                     src={imageUrl}
+                    alt=""
                     className="aspect-[3/2] object-cover"
                   />
                 );
@@ -154,7 +155,11 @@ export default function Page() {
                     className="shrink-0"
                     onClick={() => setIndex(i)}
                   >
-                    <img src={imageUrl} className={`h-full object-cover`} />
+                    <img
+                      src={imageUrl}
+                      alt=""
+                      className={`h-full object-cover`}
+                    />
                   </motion.button>
                 );
               })}

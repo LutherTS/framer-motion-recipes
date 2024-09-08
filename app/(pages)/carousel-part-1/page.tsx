@@ -31,6 +31,7 @@ export default function Page() {
                   <img
                     key={imageUrl}
                     src={imageUrl}
+                    alt=""
                     className="aspect-[3/2] w-screen object-cover"
                   />
                 );

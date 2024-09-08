@@ -129,6 +129,7 @@ export default function Carousel({ images }: { images: string[] }) {
                 >
                   <img
                     src={imageUrl}
+                    alt=""
                     className={`h-full w-full ${objectFitting === "contain" ? "object-contain" : "object-cover"}`}
                   />
                 </motion.div>
@@ -215,6 +216,7 @@ export default function Carousel({ images }: { images: string[] }) {
                     {objectFitting === "contain" && (
                       <img
                         src={imageUrl}
+                        alt=""
                         className="h-full cursor-pointer object-cover"
                         onClick={() => setIndexSelected(i)}
                       />
