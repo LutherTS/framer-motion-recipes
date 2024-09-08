@@ -1,4 +1,5 @@
 // import * as fs from "node:fs";
+import { Suspense } from "react";
 
 import Carousel from "./carousel";
 
@@ -32,7 +33,9 @@ images = imagesDynamized(10);
 export default async function Page() {
   return (
     <div className="flex max-h-screen items-center overflow-y-hidden bg-black">
-      <Carousel images={images} />
+      <Suspense>
+        <Carousel images={images} />
+      </Suspense>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MouseEventHandler } from "react";
 // @ts-ignore
@@ -340,4 +341,6 @@ Remove max-w-7xl. "left-1.5" : "right-1.5" instead of 2.
 ...
 Lifting page number to the URL.
 Making a button for contain or cover. Done via Enter.
+...
+I'll stick to img. Next/Image's width and height properties are getting on my nerves for now, and I'm pretty sure it is not intrinsically designed to animate with Framer Motion.
 */
