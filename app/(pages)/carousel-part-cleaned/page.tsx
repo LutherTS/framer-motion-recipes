@@ -32,10 +32,7 @@ images = imagesDynamized(10);
 export default async function Page() {
   return (
     <div className="flex max-h-screen items-center overflow-y-hidden bg-black">
-      <Carousel
-        images={images}
-        // objectFit="cover"
-      />
+      <Carousel images={images} />
     </div>
   );
 }
