@@ -2,7 +2,7 @@
 
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { MouseEventHandler, useState } from "react";
+import { MouseEventHandler } from "react";
 // @ts-ignore
 import useKeypress from "react-use-keypress";
 
@@ -11,68 +11,101 @@ let collapsedAspectRatio = 1 / 3;
 let gap = 4;
 let fullMargin = 12 - gap;
 
-export default function Carousel({
-  images,
-  objectFit,
-}: {
-  images: string[];
-  objectFit?: "cover" | "contain";
-}) {
-  // /* Lifting the page state to the URL
-  // Though it's actually a lot hard than it seems because verification needs to be done on what is being added to the searchParams. I can do that in my free time on Sunday before starting to slowly work on TekTIME on Monday.
-  // ...Actually to work on first Turing with Quizzes and Practical Tests.
-  // TekTIME will be initiated all day at Hubsy CNIT at La Défense.
-  const searchParams = useSearchParams();
-  console.log(searchParams);
+export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
-  console.log(pathname);
-  const { replace } = useRouter();
-  console.log(replace);
-  // Let's start by changing all setIndexes into functions.
-  // */
+  const { push } = useRouter(); // push instead replace to go back and forth in the browser's history
+  const searchParams = useSearchParams();
 
-  let [index, setIndex] = useState(0);
-  let [noDistractions, setNoDistractions] = useState(false);
+  const PAGE = "page";
+  const OBJECTFIT = "objectfit";
+  const NODISTRACTIONS = "nodistractions";
 
-  const setIndexPlusOne = (index: number) => setIndex(index + 1);
-  const setIndexMinusOne = (index: number) => setIndex(index - 1);
+  const currentPage = Number(searchParams.get(PAGE)) || 0;
+  const currentObjectFit =
+    searchParams.get(OBJECTFIT) === "contain"
+      ? "contain"
+      : searchParams.get(OBJECTFIT) === "cover"
+        ? "cover"
+        : "cover";
+  const currentNoDistraction =
+    searchParams.get(NODISTRACTIONS) === "true"
+      ? "true"
+      : searchParams.get(NODISTRACTIONS) === "false"
+        ? "false"
+        : "false";
+
+  let index = currentPage;
+  let objectFitting: "contain" | "cover" = currentObjectFit;
+  let noDistracting: "true" | "false" = currentNoDistraction;
+
+  const paramsingIndex = (index: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set(PAGE, index.toString());
+    push(`${pathname}?${params.toString()}`);
+  };
+
+  const paramsingObjectFitting = () => {
+    const params = new URLSearchParams(searchParams);
+    if (objectFitting === "contain") params.set(OBJECTFIT, "cover");
+    else params.set(OBJECTFIT, "contain");
+    push(`${pathname}?${params.toString()}`);
+  };
+
+  const paramsingNoDistracting = () => {
+    const params = new URLSearchParams(searchParams);
+    if (noDistracting === "true") params.set(NODISTRACTIONS, "false");
+    else params.set(NODISTRACTIONS, "true");
+    push(`${pathname}?${params.toString()}`);
+  };
+
+  // setIndexFunctionNames kept in reference to original state lifted to URL
+  const setIndexPlusOne = (index: number) => paramsingIndex(index + 1);
+  const setIndexMinusOne = (index: number) => paramsingIndex(index - 1);
+  const setIndexPlusTen = (index: number) =>
+    paramsingIndex(Math.min(images.length - 1, index + 10));
+  const setIndexMinusTen = (index: number) =>
+    paramsingIndex(Math.max(0, index - 10));
+  const setIndexFirst = () => paramsingIndex(0);
+  const setIndexLast = () => paramsingIndex(images.length - 1);
+  const setIndexSelected = (i: number) => paramsingIndex(i);
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
     event.preventDefault();
     if (index > 0)
-      if (event.shiftKey) setIndex(Math.max(0, index - 10));
-      else setIndex(index - 1);
+      if (event.shiftKey) setIndexMinusTen(index);
+      else setIndexMinusOne(index);
   });
 
   useKeypress("ArrowRight", (event: KeyboardEvent) => {
     event.preventDefault();
     if (index < images.length - 1)
-      if (event.shiftKey) setIndex(Math.min(images.length - 1, index + 10));
-      else setIndex(index + 1);
+      if (event.shiftKey) setIndexPlusTen(index);
+      else setIndexPlusOne(index);
   });
 
   useKeypress("ArrowUp", (event: KeyboardEvent) => {
     event.preventDefault();
-    if (event.shiftKey) setIndex(0);
+    if (event.shiftKey) setIndexFirst();
   });
 
   useKeypress("ArrowDown", (event: KeyboardEvent) => {
     event.preventDefault();
-    if (event.shiftKey) setIndex(images.length - 1);
+    if (event.shiftKey) setIndexLast();
+  });
+
+  useKeypress("Enter", (event: KeyboardEvent) => {
+    event.preventDefault();
+    paramsingObjectFitting();
   });
 
   useKeypress("Backspace", (event: KeyboardEvent) => {
     event.preventDefault();
-    setNoDistractions(!noDistractions);
+    paramsingNoDistracting();
   });
-  // console.log(noDistractions);
 
   return (
     <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-      <div
-        className="relative mx-auto flex h-full flex-col justify-center"
-        onTouchStart={() => console.log("start")}
-      >
+      <div className="relative mx-auto flex h-full flex-col justify-center">
         <div className="relative overflow-hidden">
           <motion.div
             className="flex h-screen items-center"
@@ -96,20 +129,20 @@ export default function Carousel({
                 >
                   <img
                     src={imageUrl}
-                    className={`h-full w-full ${objectFit === "contain" ? "object-contain" : "object-cover"}`}
+                    className={`h-full w-full ${objectFitting === "contain" ? "object-contain" : "object-cover"}`}
                   />
                 </motion.div>
               );
             })}
           </motion.div>
 
-          {!noDistractions && (
+          {noDistracting === "false" && (
             <AnimatePresence initial={false}>
               {index > 0 && (
                 <>
                   <ChevronButton
                     isLeft={true}
-                    handleClick={() => setIndex(index - 1)}
+                    handleClick={() => setIndexMinusOne(index)}
                   >
                     <ChevronLeftIcon />
                   </ChevronButton>
@@ -118,12 +151,12 @@ export default function Carousel({
             </AnimatePresence>
           )}
 
-          {!noDistractions && (
+          {noDistracting === "false" && (
             <AnimatePresence initial={false}>
               {index + 1 < images.length && (
                 <ChevronButton
                   isLeft={false}
-                  handleClick={() => setIndex(index + 1)}
+                  handleClick={() => setIndexPlusOne(index)}
                 >
                   <ChevronRightIcon />
                 </ChevronButton>
@@ -131,7 +164,7 @@ export default function Carousel({
             </AnimatePresence>
           )}
         </div>
-        {!noDistractions && (
+        {noDistracting === "false" && (
           <div className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden">
             <motion.div
               initial={false}
@@ -179,19 +212,20 @@ export default function Carousel({
                     }}
                     className="flex shrink-0 justify-center"
                   >
-                    {objectFit === "contain" ? (
+                    {objectFitting === "contain" && (
                       <img
                         src={imageUrl}
                         className="h-full cursor-pointer object-cover"
-                        onClick={() => setIndex(i)}
+                        onClick={() => setIndexSelected(i)}
                       />
-                    ) : (
+                    )}
+                    {objectFitting === "cover" && (
                       <button
                         className={`h-full w-full bg-cover bg-center`}
                         style={{
                           backgroundImage: `url("${imageUrl}")`,
                         }}
-                        onClick={() => setIndex(i)}
+                        onClick={() => setIndexSelected(i)}
                       />
                     )}
                   </motion.div>
@@ -303,5 +337,5 @@ https://www.reddit.com/r/learnjavascript/comments/18qer5x/how_to_detect_when_the
 Remove max-w-7xl. "left-1.5" : "right-1.5" instead of 2.
 ...
 Lifting page number to the URL.
-Making a button for contain or cover.
+Making a button for contain or cover. Done via Enter.
 */
