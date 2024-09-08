@@ -11,14 +11,14 @@ let collapsedAspectRatio = 1 / 3;
 let gap = 4;
 let fullMargin = 12 - gap;
 
+const PAGE = "page";
+const OBJECTFIT = "objectfit";
+const NODISTRACTIONS = "nodistractions";
+
 export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
   const { push } = useRouter(); // push instead replace to go back and forth in the browser's history
   const searchParams = useSearchParams();
-
-  const PAGE = "page";
-  const OBJECTFIT = "objectfit";
-  const NODISTRACTIONS = "nodistractions";
 
   const currentPage = Number(searchParams.get(PAGE)) || 0;
   const currentObjectFit =
