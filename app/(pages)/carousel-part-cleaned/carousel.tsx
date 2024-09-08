@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MouseEventHandler, useState } from "react";
 // @ts-ignore
 import useKeypress from "react-use-keypress";
@@ -17,8 +18,24 @@ export default function Carousel({
   images: string[];
   objectFit?: "cover" | "contain";
 }) {
+  // /* Lifting the page state to the URL
+  // Though it's actually a lot hard than it seems because verification needs to be done on what is being added to the searchParams. I can do that in my free time on Sunday before starting to slowly work on TekTIME on Monday.
+  // ...Actually to work on first Turing with Quizzes and Practical Tests.
+  // TekTIME will be initiated all day at Hubsy CNIT at La Défense.
+  const searchParams = useSearchParams();
+  console.log(searchParams);
+  const pathname = usePathname();
+  console.log(pathname);
+  const { replace } = useRouter();
+  console.log(replace);
+  // Let's start by changing all setIndexes into functions.
+  // */
+
   let [index, setIndex] = useState(0);
   let [noDistractions, setNoDistractions] = useState(false);
+
+  const setIndexPlusOne = (index: number) => setIndex(index + 1);
+  const setIndexMinusOne = (index: number) => setIndex(index - 1);
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
     event.preventDefault();
@@ -244,7 +261,7 @@ function ChevronButton({
       exit={{ opacity: 0, pointerEvents: "none" }}
       whileHover={{ opacity: 0.8 }}
       whileTap={{ scale: 0.9, transition: {} }}
-      className={`absolute top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-1.5" : "right-1.5"}`}
+      className={`absolute top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
       onClick={handleClick}
     >
       {children}
@@ -284,4 +301,7 @@ Well, my work here is done. Apple trackpad does not finger touch events.
 https://forums.developer.apple.com/forums/thread/88109
 https://www.reddit.com/r/learnjavascript/comments/18qer5x/how_to_detect_when_the_user_starts_and_ends/
 Remove max-w-7xl. "left-1.5" : "right-1.5" instead of 2.
+...
+Lifting page number to the URL.
+Making a button for contain or cover.
 */

@@ -4,7 +4,7 @@ import Carousel from "./carousel";
 
 let images: string[];
 
-// const directory = "./public/images7";
+// const directory = "./public/images4";
 // const files = fs.readdirSync(directory);
 
 // const directoryPath = directory.split("/").slice(2).join("/");
@@ -32,7 +32,7 @@ images = imagesDynamized(10);
 export default async function Page() {
   return (
     <div className="flex max-h-screen items-center overflow-y-hidden bg-black">
-      <Carousel images={images} objectFit="cover" />
+      <Carousel images={images} objectFit="contain" />
     </div>
   );
 }
