@@ -1,11 +1,12 @@
 "use client";
 
-import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { MouseEventHandler } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 // @ts-ignore
 import useKeypress from "react-use-keypress";
+import clsx from "clsx";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
@@ -13,8 +14,9 @@ let gap = 4;
 let fullMargin = 12 - gap;
 
 const PAGE = "page";
-const OBJECTFIT = "objectfit";
 const NODISTRACTIONS = "nodistractions";
+const OBJECTFIT = "objectfit";
+const SCROLLID = "to-be-scrolled";
 
 export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
@@ -22,12 +24,7 @@ export default function Carousel({ images }: { images: string[] }) {
   const searchParams = useSearchParams();
 
   const currentPage = Number(searchParams.get(PAGE)) || 0;
-  const currentObjectFit =
-    searchParams.get(OBJECTFIT) === "contain"
-      ? "contain"
-      : searchParams.get(OBJECTFIT) === "cover"
-        ? "cover"
-        : "cover";
+
   const currentNoDistraction =
     searchParams.get(NODISTRACTIONS) === "true"
       ? "true"
@@ -35,20 +32,22 @@ export default function Carousel({ images }: { images: string[] }) {
         ? "false"
         : "false";
 
+  const currentObjectFit =
+    searchParams.get(OBJECTFIT) === "scroll"
+      ? "scroll"
+      : searchParams.get(OBJECTFIT) === "contain"
+        ? "contain"
+        : searchParams.get(OBJECTFIT) === "cover"
+          ? "cover"
+          : "cover";
+
   let index = currentPage;
-  let objectFitting: "contain" | "cover" = currentObjectFit;
   let noDistracting: "true" | "false" = currentNoDistraction;
+  let objectFitting: "contain" | "cover" | "scroll" = currentObjectFit;
 
   const paramsingIndex = (index: number) => {
     const params = new URLSearchParams(searchParams);
     params.set(PAGE, index.toString());
-    push(`${pathname}?${params.toString()}`);
-  };
-
-  const paramsingObjectFitting = () => {
-    const params = new URLSearchParams(searchParams);
-    if (objectFitting === "contain") params.set(OBJECTFIT, "cover");
-    else params.set(OBJECTFIT, "contain");
     push(`${pathname}?${params.toString()}`);
   };
 
@@ -58,6 +57,31 @@ export default function Carousel({ images }: { images: string[] }) {
     else params.set(NODISTRACTIONS, "true");
     push(`${pathname}?${params.toString()}`);
   };
+
+  const paramsingObjectFitting = () => {
+    const params = new URLSearchParams(searchParams);
+    if (objectFitting === "contain") params.set(OBJECTFIT, "cover");
+    else if (objectFitting === "cover") params.set(OBJECTFIT, "scroll");
+    else params.set(OBJECTFIT, "contain");
+    push(`${pathname}?${params.toString()}`);
+  };
+
+  const reverseParamsingObjectFitting = () => {
+    const params = new URLSearchParams(searchParams);
+    if (objectFitting === "contain") params.set(OBJECTFIT, "scroll");
+    else if (objectFitting === "cover") params.set(OBJECTFIT, "contain");
+    else params.set(OBJECTFIT, "cover");
+    push(`${pathname}?${params.toString()}`);
+  };
+
+  const scrollToTop = () =>
+    document.getElementById(SCROLLID)!.scrollTo({ top: 0, behavior: "smooth" });
+
+  const scrollToBottom = () =>
+    document.getElementById(SCROLLID)!.scrollTo({
+      top: document.getElementById(SCROLLID)!.scrollHeight,
+      behavior: "smooth",
+    });
 
   // setIndexFunctionNames kept in reference to original state lifted to URL
   const setIndexPlusOne = (index: number) => paramsingIndex(index + 1);
@@ -72,31 +96,42 @@ export default function Carousel({ images }: { images: string[] }) {
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
     event.preventDefault();
-    if (index > 0)
+    if (index > 0) {
       if (event.shiftKey) setIndexMinusTen(index);
       else setIndexMinusOne(index);
+      scrollToTop();
+    }
   });
 
   useKeypress("ArrowRight", (event: KeyboardEvent) => {
     event.preventDefault();
-    if (index < images.length - 1)
+    if (index < images.length - 1) {
       if (event.shiftKey) setIndexPlusTen(index);
       else setIndexPlusOne(index);
+      scrollToTop();
+    }
   });
 
   useKeypress("ArrowUp", (event: KeyboardEvent) => {
     event.preventDefault();
-    if (event.shiftKey) setIndexFirst();
+
+    if (event.shiftKey) {
+      setIndexFirst();
+      scrollToTop();
+    } else {
+      scrollToTop();
+    }
   });
 
   useKeypress("ArrowDown", (event: KeyboardEvent) => {
     event.preventDefault();
-    if (event.shiftKey) setIndexLast();
-  });
 
-  useKeypress("Enter", (event: KeyboardEvent) => {
-    event.preventDefault();
-    paramsingObjectFitting();
+    if (event.shiftKey) {
+      setIndexLast();
+      scrollToTop();
+    } else {
+      scrollToBottom();
+    }
   });
 
   useKeypress("Backspace", (event: KeyboardEvent) => {
@@ -104,12 +139,23 @@ export default function Carousel({ images }: { images: string[] }) {
     paramsingNoDistracting();
   });
 
+  useKeypress("Enter", (event: KeyboardEvent) => {
+    event.preventDefault();
+    if (event.shiftKey) reverseParamsingObjectFitting();
+    else paramsingObjectFitting();
+  });
+
   return (
     <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-      <div className="relative mx-auto flex h-full flex-col justify-center">
-        <div className="relative overflow-hidden">
+      {/* removed relative h-full justify-center */}
+      <div className="mx-auto flex h-full flex-col">
+        {/* removed relative */}
+        {/* overflow-x-hidden instead of overflow-hidden */}
+        <div className="overflow-x-hidden" id={SCROLLID}>
           <motion.div
-            className="flex h-screen items-center"
+            // h-screen reacts
+            // removed items-center
+            className={`flex h-screen`}
             animate={{ x: `-${index * 100}%` }}
           >
             {images.map((imageUrl, i) => {
@@ -126,12 +172,20 @@ export default function Carousel({ images }: { images: string[] }) {
                   }}
                   key={imageUrl}
                   src={imageUrl}
-                  className="flex h-full w-full shrink-0 items-center justify-center"
+                  // h-fit goes somewhere
+                  // removed items-center justify-center
+                  className="flex h-fit w-full shrink-0"
                 >
                   <img
                     src={imageUrl}
                     alt=""
-                    className={`h-full w-full ${objectFitting === "contain" ? "object-contain" : "object-cover"}`}
+                    className={clsx(
+                      "w-full",
+                      objectFitting === "contain" && "h-screen object-contain",
+                      objectFitting === "cover" && "h-screen object-cover",
+                      objectFitting === "scroll" && "h-full",
+                    )}
+                    // className={`h-screen w-full ${objectFitting === "contain" ? "object-contain" : "object-cover"}`} // object-cover is like a default, actually no, fill is the default
                   />
                 </motion.div>
               );
@@ -144,7 +198,10 @@ export default function Carousel({ images }: { images: string[] }) {
                 <>
                   <ChevronButton
                     isLeft={true}
-                    handleClick={() => setIndexMinusOne(index)}
+                    handleClick={() => {
+                      setIndexMinusOne(index);
+                      scrollToTop();
+                    }}
                   >
                     <ChevronLeftIcon />
                   </ChevronButton>
@@ -158,7 +215,10 @@ export default function Carousel({ images }: { images: string[] }) {
               {index + 1 < images.length && (
                 <ChevronButton
                   isLeft={false}
-                  handleClick={() => setIndexPlusOne(index)}
+                  handleClick={() => {
+                    setIndexPlusOne(index);
+                    scrollToTop();
+                  }}
                 >
                   <ChevronRightIcon />
                 </ChevronButton>
@@ -214,7 +274,8 @@ export default function Carousel({ images }: { images: string[] }) {
                     }}
                     className="flex shrink-0 justify-center"
                   >
-                    {objectFitting === "contain" && (
+                    {(objectFitting === "contain" ||
+                      objectFitting === "scroll") && (
                       <img
                         src={imageUrl}
                         alt=""
