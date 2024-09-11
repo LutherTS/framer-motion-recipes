@@ -152,10 +152,13 @@ export default function Carousel({ images }: { images: string[] }) {
     else paramsingObjectFitting();
   });
 
-  let height = useMotionValue(0);
-  const { width } = useWindowSize();
+  const { width, height } = useWindowSize();
+  let scrollHeight = useMotionValue(height);
+
   useEffect(() => {
-    height.set(document.getElementById(`${IMAGEID + index}`)!.clientHeight);
+    scrollHeight.set(
+      document.getElementById(`${IMAGEID + index}`)!.clientHeight,
+    );
   }, [index, objectFitting, width]);
 
   /* NEXT UP WOULD BE:
@@ -173,7 +176,7 @@ export default function Carousel({ images }: { images: string[] }) {
                 className={`flex`}
                 animate={{ x: `-${index * 100}%` }}
                 style={{
-                  height: objectFitting === "scroll" ? height : "auto",
+                  height: objectFitting === "scroll" ? scrollHeight : "auto",
                 }}
               >
                 {images.map((imageUrl, i) => {
