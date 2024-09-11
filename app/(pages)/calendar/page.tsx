@@ -17,6 +17,7 @@ import { useState } from "react";
 // @ts-ignore
 import useKeypress from "react-use-keypress";
 import useMeasure from "react-use-measure";
+// import { useMeasure } from "@uidotdev/usehooks"; // pretty much works all the same
 
 let daysLabels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -39,6 +40,7 @@ export default function Page() {
   let [direction, setDirection] = useState<number>();
   let [isAnimating, setIsAnimating] = useState(false);
   let [ref, bounds] = useMeasure();
+  // let [ref, { height }] = useMeasure();
 
   let month = parse(monthString, "yyyy-MM", new Date());
 
@@ -83,6 +85,7 @@ export default function Page() {
             <div className="flex flex-col justify-center rounded text-center">
               <motion.div
                 animate={{ height: bounds.height > 0 ? bounds.height : null }}
+                // animate={{ height: height > 0 ? height : null }}
                 transition={{
                   type: "spring",
                   bounce: 0.2,
