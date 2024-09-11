@@ -1,4 +1,4 @@
-import * as fs from "node:fs";
+// import * as fs from "node:fs";
 import { Suspense } from "react";
 
 import Carousel from "./carousel";
@@ -18,7 +18,7 @@ let images: string[];
 // ]);
 // imagesForSorting.sort((a, b) => a[1] - b[1]);
 // images = imagesForSorting.map((e) => e[0]);
-// console.log(images);
+// // console.log(images);
 
 /* Replacing the copypasted multiple images. */
 const imagesDynamized = (x: number) => {

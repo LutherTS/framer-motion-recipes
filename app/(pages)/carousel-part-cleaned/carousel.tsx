@@ -12,6 +12,7 @@ import {
 // @ts-ignore
 import useKeypress from "react-use-keypress";
 import clsx from "clsx";
+import useWindowSize from "@buildinams/use-window-size";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
@@ -29,14 +30,14 @@ export default function Carousel({ images }: { images: string[] }) {
   const { push } = useRouter(); // push instead replace to go back and forth in the browser's history
   const searchParams = useSearchParams();
 
-  const currentPage = Number(searchParams.get(PAGE)) || 0;
+  const currentPage = Number(searchParams.get(PAGE)) || 0; // default O
 
   const currentNoDistraction =
     searchParams.get(NODISTRACTIONS) === "true"
       ? "true"
       : searchParams.get(NODISTRACTIONS) === "false"
         ? "false"
-        : "false";
+        : "false"; // default false
 
   const currentObjectFit =
     searchParams.get(OBJECTFIT) === "contain"
@@ -45,7 +46,7 @@ export default function Carousel({ images }: { images: string[] }) {
         ? "scroll"
         : searchParams.get(OBJECTFIT) === "cover"
           ? "cover"
-          : "cover";
+          : "cover"; // default cover
 
   let index = currentPage;
   let noDistracting: "false" | "true" = currentNoDistraction;
@@ -152,9 +153,15 @@ export default function Carousel({ images }: { images: string[] }) {
   });
 
   let height = useMotionValue(0);
+  const { width } = useWindowSize();
   useEffect(() => {
     height.set(document.getElementById(`${IMAGEID + index}`)!.clientHeight);
-  }, [height, index, objectFitting]);
+  }, [index, objectFitting, width]);
+
+  /* NEXT UP WOULD BE:
+  - a images folder selector based on the folders in public
+  - making images work in the dependency array or otherwise when a different folder is selected
+  */
 
   return (
     <div className="flex max-h-screen items-center overflow-y-hidden bg-black">
