@@ -153,17 +153,18 @@ export default function Carousel({ images }: { images: string[] }) {
   });
 
   const { width, height } = useWindowSize();
-  let scrollHeight = useMotionValue(height);
+  let objectFittingScrollHeight = useMotionValue(height);
 
   useEffect(() => {
-    scrollHeight.set(
+    objectFittingScrollHeight.set(
       document.getElementById(`${IMAGEID + index}`)!.clientHeight,
     );
-  }, [index, objectFitting, width]);
+  }, [height, index, objectFitting, width, images]);
 
   /* NEXT UP WOULD BE:
+  - FIRST, a problem in production, scrollHeight begins at 0 no matter what, as if useEffect on mount does not apply there. It actually does the same thing in production when I add images to the dependencies array.
   - a images folder selector based on the folders in public
-  - making images work in the dependency array or otherwise when a different folder is selected
+  - making images work in the dependencies array or otherwise when a different folder is selected
   */
 
   return (
@@ -176,7 +177,10 @@ export default function Carousel({ images }: { images: string[] }) {
                 className={`flex`}
                 animate={{ x: `-${index * 100}%` }}
                 style={{
-                  height: objectFitting === "scroll" ? scrollHeight : "auto",
+                  height:
+                    objectFitting === "scroll"
+                      ? objectFittingScrollHeight
+                      : "auto",
                 }}
               >
                 {images.map((imageUrl, i) => {
