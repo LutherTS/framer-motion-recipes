@@ -159,7 +159,7 @@ export default function Carousel({ images }: { images: string[] }) {
     objectFittingScrollHeight.set(
       document.getElementById(`${IMAGEID + index}`)!.clientHeight,
     );
-  }, [height, index, objectFitting, width, images]);
+  }, [objectFittingScrollHeight, index, objectFitting, width, images]);
 
   /* NEXT UP WOULD BE:
   - FIRST, a problem in production, scrollHeight begins at 0 no matter what, as if useEffect on mount does not apply there. It actually does the same thing in production when I add images to the dependencies array.
