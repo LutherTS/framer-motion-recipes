@@ -156,15 +156,23 @@ export default function Carousel({ images }: { images: string[] }) {
   let objectFittingScrollHeight = useMotionValue(height);
 
   useEffect(() => {
-    objectFittingScrollHeight.set(
-      document.getElementById(`${IMAGEID + index}`)!.clientHeight,
-    );
-  }, [objectFittingScrollHeight, index, objectFitting, width, images]);
+    const image = document.getElementById(
+      `${IMAGEID + index}`,
+    ) as HTMLImageElement;
+    const imageDecoding = async () => await image.decode();
+    imageDecoding().then(() => {
+      objectFittingScrollHeight.set(
+        document.getElementById(`${IMAGEID + index}`)!.clientHeight,
+      );
+    });
+  }, [index, objectFitting, width, images]);
 
   /* NEXT UP WOULD BE:
   - FIRST, a problem in production, scrollHeight begins at 0 no matter what, as if useEffect on mount does not apply there. It actually does the same thing in production when I add images to the dependencies array.
-  - a images folder selector based on the folders in public
-  - making images work in the dependencies array or otherwise when a different folder is selected
+  - ...Now seems fixed but without error handling.
+
+  - a images folder selector based on the folders in /public
+  - or even making the app work locally with any compliant images folder on your computer
   */
 
   return (
@@ -430,4 +438,22 @@ Lifting page number to the URL.
 Making a button for contain or cover. Done via Enter.
 ...
 I'll stick to img. Next/Image's width and height properties are getting on my nerves for now, and I'm pretty sure it is not intrinsically designed to animate with Framer Motion.
+...
+Putting this in the back...
+// objectFittingScrollHeight.set(
+//   document.getElementById(`${IMAGEID + index}`)!.clientHeight,
+// );
+
+// console.log("That timeout...");
+// const timeoutId = setTimeout(() => {
+//   console.log("Delayed for 1O milliseconds.");
+//   objectFittingScrollHeight.set(
+//     document.getElementById(`${IMAGEID + index}`)!.clientHeight,
+//   );
+// }, 10);
+// console.log(timeoutId);
+// return () => {
+//   console.log("We clearin'.");
+//   clearTimeout(timeoutId);
+// };
 */
