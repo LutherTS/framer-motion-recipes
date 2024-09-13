@@ -156,15 +156,17 @@ export default function Carousel({ images }: { images: string[] }) {
   let objectFittingScrollHeight = useMotionValue(height);
 
   useEffect(() => {
-    const image = document.getElementById(
-      `${IMAGEID + index}`,
-    ) as HTMLImageElement;
-    const imageDecoding = async () => await image.decode();
-    imageDecoding().then(() => {
-      objectFittingScrollHeight.set(
-        document.getElementById(`${IMAGEID + index}`)!.clientHeight,
-      );
-    });
+    if (objectFitting === "scroll") {
+      const image = document.getElementById(
+        `${IMAGEID + index}`,
+      ) as HTMLImageElement;
+      const imageDecoding = async () => await image.decode();
+      imageDecoding().then(() => {
+        objectFittingScrollHeight.set(
+          document.getElementById(`${IMAGEID + index}`)!.clientHeight,
+        );
+      });
+    }
   }, [index, objectFitting, width, images]);
 
   /* NEXT UP WOULD BE:
