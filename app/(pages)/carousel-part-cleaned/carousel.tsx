@@ -22,7 +22,6 @@ import useKeypress from "react-use-keypress";
 import clsx from "clsx";
 import useWindowSize from "@buildinams/use-window-size";
 import { useIdleTimer } from "react-idle-timer";
-import { randomUUID } from "crypto";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
@@ -98,9 +97,10 @@ export default function Carousel({ images }: { images: string[] }) {
   const { scrollY } = useScroll({ container: carouselRef });
 
   useMotionValueEvent(scrollY, "change", (current) => {
-    // console.log({ current });
-    // paramsingScrollPosition(current);
+    console.log({ current, animationsSet });
+    // if (animationsSet.size === 0) paramsingScrollPosition(current);
   }); // https://www.framer.com/motion/use-scroll/##element-scroll
+  // Now my issue is about asynchronism and I assume speed of executions. The set is still when the animation starts.
 
   const paramsingNoDistracting = () => {
     const params = new URLSearchParams(searchParams);
@@ -207,7 +207,6 @@ export default function Carousel({ images }: { images: string[] }) {
       setIndexLast();
       scrollToTop();
     } else {
-      console.log(document.getElementById(SCROLLID)!.scrollTop);
       scrollToBottom();
     }
   });
@@ -278,20 +277,20 @@ export default function Carousel({ images }: { images: string[] }) {
 
   function onStart(definition: AnimationDefinition) {
     const def = JSON.stringify(definition);
-    console.log("Started animating", def);
+    // console.log("Started animating", def);
     const set = animationsSet;
     set.add(def);
     setAnimationsSet(set);
-    console.log({ animationsSet });
+    // console.log({ animationsSet });
   }
 
   function onComplete(definition: AnimationDefinition) {
     const def = JSON.stringify(definition);
-    console.log("Completed animating", def);
+    // console.log("Completed animating", def);
     const set = animationsSet;
     set.delete(def);
     setAnimationsSet(set);
-    console.log({ animationsSet });
+    // console.log({ animationsSet });
   }
 
   return (
