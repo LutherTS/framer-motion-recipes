@@ -15,6 +15,8 @@ export default function FixedHeaderPart1Page() {
   } = useScroll();
   let height = useMotionValue(80);
 
+  console.log(scrollY);
+
   // my take on opacity
   let navOpacity = useMotionValue(1);
 

@@ -1,18 +1,26 @@
 "use client";
 
-import { MouseEventHandler, useEffect } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { MouseEventHandler, useEffect, useRef } from "react";
+import {
+  redirect,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 
 import {
   AnimatePresence,
   MotionConfig,
   motion,
   useMotionValue,
+  useMotionValueEvent,
+  useScroll,
 } from "framer-motion";
 // @ts-ignore
 import useKeypress from "react-use-keypress";
 import clsx from "clsx";
 import useWindowSize from "@buildinams/use-window-size";
+import { useIdleTimer } from "react-idle-timer";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
@@ -20,25 +28,40 @@ let gap = 4;
 let fullMargin = 12 - gap;
 
 const PAGE = "page";
+// const SCROLLPOSITION = "scrollposition";
 const NODISTRACTIONS = "nodistractions";
 const OBJECTFIT = "objectfit";
+
 const SCROLLID = "to-be-scrolled";
 const IMAGEID = "image-";
+const CAROUSEL = "carousel";
 
+// No idea why console.logs get printed six times in Carousel
 export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
-  const { push } = useRouter(); // push instead replace to go back and forth in the browser's history
+  const { push, replace, back, forward } = useRouter(); // push instead of replace to go back and forth in the browser's history, now only for pages, replace for other parameters
   const searchParams = useSearchParams();
 
-  const currentPage = Number(searchParams.get(PAGE)) || 0; // default O
+  const currentPage = Number(searchParams.get(PAGE)) || 0;
+  if (currentPage > images.length - 1) {
+    const params = new URLSearchParams(searchParams);
+    params.set(PAGE, (images.length - 1).toString());
+    redirect(`${pathname}?${params.toString()}`); // it works but I'm not convinced about the behavior... redirect is full refresh... but I think it's appropriate because it considers the situation as the error that it is
+  }
+
+  // const currentScrollPosition = Number(searchParams.get(SCROLLPOSITION)) || 0;
+  // console.log(currentScrollPosition);
 
   const currentNoDistraction =
-    searchParams.get(NODISTRACTIONS) === "true"
-      ? "true"
-      : searchParams.get(NODISTRACTIONS) === "false"
-        ? "false"
-        : "false"; // default false
+    searchParams.get(NODISTRACTIONS) === "imagesonly"
+      ? "imagesonly"
+      : searchParams.get(NODISTRACTIONS) === "true"
+        ? "true"
+        : searchParams.get(NODISTRACTIONS) === "false"
+          ? "false"
+          : "false"; // default false
 
+  // currentObjectFit kept in reference to originally being only contain and cover
   const currentObjectFit =
     searchParams.get(OBJECTFIT) === "contain"
       ? "contain"
@@ -49,36 +72,70 @@ export default function Carousel({ images }: { images: string[] }) {
           : "cover"; // default cover
 
   let index = currentPage;
-  let noDistracting: "false" | "true" = currentNoDistraction;
+  // let scrollPosition = currentScrollPosition;
+  let noDistracting: "false" | "imagesonly" | "true" = currentNoDistraction;
   let objectFitting: "cover" | "contain" | "scroll" = currentObjectFit;
 
   const paramsingIndex = (index: number) => {
+    console.log({ index });
     const params = new URLSearchParams(searchParams);
-    params.set(PAGE, index.toString());
+    console.log({ params });
+    if (index !== 0) params.set(PAGE, index.toString());
+    else params.delete(PAGE);
+    // resetting scrollPosition to 0 (still not enough)
+    // params.delete(SCROLLPOSITION);
     push(`${pathname}?${params.toString()}`);
   };
+
+  // const paramsingScrollPosition = (scrollPosition: number) => {
+  //   const params = new URLSearchParams(searchParams);
+  //   params.set(SCROLLPOSITION, scrollPosition.toString());
+  //   replace(`${pathname}?${params.toString()}`);
+  // };
+
+  const carouselRef = useRef(null);
+  const { scrollY } = useScroll({ container: carouselRef });
+
+  useMotionValueEvent(scrollY, "change", (current) => {
+    console.log({ current });
+    // paramsingScrollPosition(current);
+  }); // https://www.framer.com/motion/use-scroll/##element-scroll
 
   const paramsingNoDistracting = () => {
     const params = new URLSearchParams(searchParams);
     if (noDistracting === "true") params.set(NODISTRACTIONS, "false");
+    else if (noDistracting === "false")
+      params.set(NODISTRACTIONS, "imagesonly");
     else params.set(NODISTRACTIONS, "true");
-    push(`${pathname}?${params.toString()}`);
+    replace(`${pathname}?${params.toString()}`);
+  };
+
+  const reverseParamsingNoDistracting = () => {
+    const params = new URLSearchParams(searchParams);
+    if (noDistracting === "true") params.set(NODISTRACTIONS, "imagesonly");
+    else if (noDistracting === "imagesonly")
+      params.set(NODISTRACTIONS, "false");
+    else params.set(NODISTRACTIONS, "true");
+    replace(`${pathname}?${params.toString()}`);
   };
 
   const paramsingObjectFitting = () => {
     const params = new URLSearchParams(searchParams);
     if (objectFitting === "cover") params.set(OBJECTFIT, "contain");
     else if (objectFitting === "contain") params.set(OBJECTFIT, "scroll");
-    else params.set(OBJECTFIT, "cover");
-    push(`${pathname}?${params.toString()}`);
+    else {
+      params.set(OBJECTFIT, "cover");
+    }
+    replace(`${pathname}?${params.toString()}`);
   };
 
   const reverseParamsingObjectFitting = () => {
     const params = new URLSearchParams(searchParams);
     if (objectFitting === "cover") params.set(OBJECTFIT, "scroll");
-    else if (objectFitting === "scroll") params.set(OBJECTFIT, "contain");
-    else params.set(OBJECTFIT, "cover");
-    push(`${pathname}?${params.toString()}`);
+    else if (objectFitting === "scroll") {
+      params.set(OBJECTFIT, "contain");
+    } else params.set(OBJECTFIT, "cover");
+    replace(`${pathname}?${params.toString()}`);
   };
 
   const scrollToTop = () =>
@@ -102,6 +159,13 @@ export default function Carousel({ images }: { images: string[] }) {
   const setIndexSelected = (i: number) => paramsingIndex(i);
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
+    // if (event.metaKey) return; // back();
+    if (event.metaKey) {
+      // The default is the behavior I'm seeking. But since I can't be sure that every browser has the same default as Firefox, I choose to do it manually with the tool provided by Next.js to make sure.
+      event.preventDefault();
+      return back();
+    }
+
     event.preventDefault();
     if (index > 0) {
       if (event.shiftKey) setIndexMinusTen(index);
@@ -111,6 +175,11 @@ export default function Carousel({ images }: { images: string[] }) {
   });
 
   useKeypress("ArrowRight", (event: KeyboardEvent) => {
+    if (event.metaKey) {
+      event.preventDefault();
+      return forward();
+    }
+
     event.preventDefault();
     if (index < images.length - 1) {
       if (event.shiftKey) setIndexPlusTen(index);
@@ -137,13 +206,15 @@ export default function Carousel({ images }: { images: string[] }) {
       setIndexLast();
       scrollToTop();
     } else {
+      console.log(document.getElementById(SCROLLID)!.scrollTop);
       scrollToBottom();
     }
   });
 
   useKeypress("Backspace", (event: KeyboardEvent) => {
     event.preventDefault();
-    paramsingNoDistracting();
+    if (event.shiftKey) reverseParamsingNoDistracting();
+    else paramsingNoDistracting();
   });
 
   useKeypress("Enter", (event: KeyboardEvent) => {
@@ -169,19 +240,47 @@ export default function Carousel({ images }: { images: string[] }) {
     }
   }, [index, objectFitting, width, images]);
 
+  const onIdle = () => {
+    document.getElementById(CAROUSEL)!.style.cursor = "none";
+  };
+
+  const onActive = () => {
+    document.getElementById(CAROUSEL)!.style.cursor = "auto";
+  };
+
+  useIdleTimer({
+    timeout: 2_000,
+    onIdle,
+    onActive,
+    events: ["mousemove"],
+  });
+
   /* NEXT UP WOULD BE:
-  - FIRST, a problem in production, scrollHeight begins at 0 no matter what, as if useEffect on mount does not apply there. It actually does the same thing in production when I add images to the dependencies array.
-  - ...Now seems fixed but without error handling.
+  - PRODUCTION, Framer Motion interruptability does not work in production, which I'll need to understand.
+  For now, the behavior is exactly the same as when pressing the buttons on screen... which honestly is not that big of a deal, currently.
+
+  - remembering scroll position in and out of scroll (in state not URL)
+  - keyboard tabbing navigation and focus-visible styles
+  (But that's going to be a huge chunk.)
 
   - a images folder selector based on the folders in /public
-  - or even making the app work locally with any compliant images folder on your computer
+  - Or even making the app work locally with any compliant images folder on your computer. Ideal for manga-reading.
   */
 
   return (
-    <div className="flex max-h-screen items-center overflow-y-hidden bg-black">
+    <div
+      id={CAROUSEL}
+      // removed max-h-screen
+      className="flex items-center overflow-y-hidden bg-black"
+    >
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-        <div className="mx-auto flex h-full flex-col">
-          <div className="h-screen overflow-x-hidden" id={SCROLLID}>
+        {/* removed mx-auto */}
+        <div className="flex h-full flex-col">
+          <div
+            className="h-screen overflow-x-hidden"
+            id={SCROLLID}
+            ref={carouselRef}
+          >
             <div className="overflow-hidden">
               <motion.div
                 className={`flex`}
@@ -261,7 +360,7 @@ export default function Carousel({ images }: { images: string[] }) {
               </AnimatePresence>
             )}
           </div>
-          {noDistracting === "false" && (
+          {(noDistracting === "false" || noDistracting === "imagesonly") && (
             <div className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden">
               <motion.div
                 initial={false}
@@ -311,6 +410,7 @@ export default function Carousel({ images }: { images: string[] }) {
                     >
                       {(objectFitting === "contain" ||
                         objectFitting === "scroll") && (
+                        // For accessibility, that will need to be a button, preferrably for all objectFittings.
                         <img
                           src={imageUrl}
                           alt=""
@@ -394,6 +494,7 @@ function ChevronButton({
       animate={{ opacity: 0.6 }}
       exit={{ opacity: 0, pointerEvents: "none" }}
       whileHover={{ opacity: 0.8 }}
+      // whileTap here considers pressing Enter to be whileTap, even though I have it with preventDefault() via useKeypress
       whileTap={{ scale: 0.9, transition: {} }}
       className={`absolute top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
       onClick={handleClick}
@@ -458,4 +559,25 @@ Putting this in the back...
 //   console.log("We clearin'.");
 //   clearTimeout(timeoutId);
 // };
+...
+This is where I should admit I got defeated and I should take Emil Kowalski's class on animations.
+PREVIOUS REFLECTIONS:
+  // Incredible that this is now my first useState, since I'm adamant about saving this specifically in the state and not the URL.
+  // const [scrollPosition, setScrollPosition] = useState(0);
+  // I want to have scroll position in the URL.
+  // but first, let's start by using router.replace() for all not-page-related URL updates.
+  // DECIDED. Scroll position is going to the URL.
+  // It's only the page is changed to scrollposition will be reset to 0.
+  // What could be done is keeping in a state the previous scrollposition and the page with it, so that if someone on a page goes back to the previous page and it's the one that is kept in state, then we can lead them back to their previous scrollposition. (Instead of having a full array in the URL of your positions on all the pages.)
+
+  // console.log("Page scroll: ", latest);
+  // I think useMotionValueEvent debounces on its own. So nice.
+  // Actually it doesn't, Firefox does.
+  // It will be something to optimize later.
+  // paramsingScrollPosition(latest);
+  // The problem is, therefore and indeed, a matter of debouncing.
+  // Or rather I need to deactivate paramsingScrollPosition while the page is transitioning, which means I need paramsingIndex to use some kind of useTransition. Or I need to do something onFramerMotionAntionComplete.
+  // Does the scrollTop has the same speed as the transition? It doesn't it's duration in independent. First, I want it to be the same.
+  // ...
+  // OK the first thing I want to do is, match the scrollTop speed with that of the motion config. If that works, it's a good start.
 */

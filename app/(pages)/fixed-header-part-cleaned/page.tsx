@@ -33,6 +33,8 @@ const useBoundedScroll = (start: number, end: number) => {
   );
 
   useMotionValueEvent(scrollY, "change", (current) => {
+    console.log("Page scroll: ", current);
+
     let previous = scrollY.getPrevious();
     let diff = previous ? current - previous : 0;
 
