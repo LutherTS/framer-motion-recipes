@@ -5,7 +5,7 @@ import Carousel from "./carousel";
 
 let images: string[];
 
-const directory = "./public/images4";
+const directory = "./public/images6";
 const files = fs.readdirSync(directory);
 
 const directoryPath = directory.split("/").slice(2).join("/");

@@ -1,6 +1,6 @@
 "use client";
 
-import { MouseEventHandler, useEffect, useRef } from "react";
+import { MouseEventHandler, useEffect, useRef, useState } from "react";
 import {
   redirect,
   usePathname,
@@ -10,6 +10,7 @@ import {
 
 import {
   AnimatePresence,
+  AnimationDefinition,
   MotionConfig,
   motion,
   useMotionValue,
@@ -21,6 +22,7 @@ import useKeypress from "react-use-keypress";
 import clsx from "clsx";
 import useWindowSize from "@buildinams/use-window-size";
 import { useIdleTimer } from "react-idle-timer";
+import { randomUUID } from "crypto";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
@@ -36,7 +38,8 @@ const SCROLLID = "to-be-scrolled";
 const IMAGEID = "image-";
 const CAROUSEL = "carousel";
 
-// No idea why console.logs get printed six times in Carousel
+// No idea why console.logs get printed six times in Carousel.
+// There's also some inconsistencies with interuptability.
 export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
   const { push, replace, back, forward } = useRouter(); // push instead of replace to go back and forth in the browser's history, now only for pages, replace for other parameters
@@ -77,9 +80,7 @@ export default function Carousel({ images }: { images: string[] }) {
   let objectFitting: "cover" | "contain" | "scroll" = currentObjectFit;
 
   const paramsingIndex = (index: number) => {
-    console.log({ index });
     const params = new URLSearchParams(searchParams);
-    console.log({ params });
     if (index !== 0) params.set(PAGE, index.toString());
     else params.delete(PAGE);
     // resetting scrollPosition to 0 (still not enough)
@@ -97,7 +98,7 @@ export default function Carousel({ images }: { images: string[] }) {
   const { scrollY } = useScroll({ container: carouselRef });
 
   useMotionValueEvent(scrollY, "change", (current) => {
-    console.log({ current });
+    // console.log({ current });
     // paramsingScrollPosition(current);
   }); // https://www.framer.com/motion/use-scroll/##element-scroll
 
@@ -259,13 +260,39 @@ export default function Carousel({ images }: { images: string[] }) {
   - PRODUCTION, Framer Motion interruptability does not work in production, which I'll need to understand.
   For now, the behavior is exactly the same as when pressing the buttons on screen... which honestly is not that big of a deal, currently.
 
-  - remembering scroll position in and out of scroll (in state not URL)
+  - remembering scroll position in and out of scroll (actually in URL)
+  I need to be able to define exactly what I want to do here.
+  1. I want to have control over the animation of scrollTo, so that if effective it could match the duration and ease of MotionConfig. This makes me believe that scrollTo should be made with Framer Motion instead of through CSS, JavaScript and the browser.
+  2. I want to be able to save the scroll position with a scrollposition params at all times when a user scrolls the page (or rather scrolls SCROLLID)
+  3. I want to make sure that this scrollposition is not updated while all current Framer Motion animations on "carousel core" are still ongoing.
+  4. Which is why I need to have the list of all 
+
   - keyboard tabbing navigation and focus-visible styles
   (But that's going to be a huge chunk.)
 
   - a images folder selector based on the folders in /public
   - Or even making the app work locally with any compliant images folder on your computer. Ideal for manga-reading.
   */
+
+  const [animationsSet, setAnimationsSet] = useState<Set<string>>(new Set());
+
+  function onStart(definition: AnimationDefinition) {
+    const def = JSON.stringify(definition);
+    console.log("Started animating", def);
+    const set = animationsSet;
+    set.add(def);
+    setAnimationsSet(set);
+    console.log({ animationsSet });
+  }
+
+  function onComplete(definition: AnimationDefinition) {
+    const def = JSON.stringify(definition);
+    console.log("Completed animating", def);
+    const set = animationsSet;
+    set.delete(def);
+    setAnimationsSet(set);
+    console.log({ animationsSet });
+  }
 
   return (
     <div
@@ -291,6 +318,12 @@ export default function Carousel({ images }: { images: string[] }) {
                       ? objectFittingScrollHeight
                       : "auto",
                 }}
+                onAnimationStart={(definition: AnimationDefinition) =>
+                  onStart(definition)
+                }
+                onAnimationComplete={(definition: AnimationDefinition) =>
+                  onComplete(definition)
+                }
               >
                 {images.map((imageUrl, i) => {
                   let image = index === i ? "full" : "collapsed";
