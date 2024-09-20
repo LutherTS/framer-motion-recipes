@@ -14,6 +14,7 @@
     "animated-scroll-to": "^2.3.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "debounce": "^2.1.1",
     "framer-motion": "^12.0.0-alpha.0",
     "next": "15.0.0-rc.0",
     "react": "19.0.0-rc-f994737d14-20240522",
@@ -21,6 +22,7 @@
     "react-idle-timer": "^5.7.2",
     "react-use-keypress": "^1.3.1",
     "react-use-measure": "^2.1.1",
+    "use-debounce": "^10.0.3",
     "use-idle-timeout": "^0.0.7"
   },
   "devDependencies": {

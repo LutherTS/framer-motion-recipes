@@ -22,6 +22,7 @@ import useKeypress from "react-use-keypress";
 import clsx from "clsx";
 import useWindowSize from "@buildinams/use-window-size";
 import { useIdleTimer } from "react-idle-timer";
+import { useDebouncedCallback } from "use-debounce";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
@@ -29,7 +30,8 @@ let gap = 4;
 let fullMargin = 12 - gap;
 
 const PAGE = "page";
-// const SCROLLPOSITION = "scrollposition";
+const SCROLLPOSITION = "scrollposition";
+const WINDOWWIDTH = "windowwidth";
 const NODISTRACTIONS = "nodistractions";
 const OBJECTFIT = "objectfit";
 
@@ -37,7 +39,7 @@ const SCROLLID = "to-be-scrolled";
 const IMAGEID = "image-";
 const CAROUSEL = "carousel";
 
-// No idea why console.logs get printed six times in Carousel.
+// No idea why console.logs get printed six times in Carousel sometimes.
 // There's also some inconsistencies with interuptability.
 export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
@@ -48,11 +50,20 @@ export default function Carousel({ images }: { images: string[] }) {
   if (currentPage > images.length - 1) {
     const params = new URLSearchParams(searchParams);
     params.set(PAGE, (images.length - 1).toString());
-    redirect(`${pathname}?${params.toString()}`); // it works but I'm not convinced about the behavior... redirect is full refresh... but I think it's appropriate because it considers the situation as the error that it is
+    redirect(`${pathname}?${params.toString()}`); // redirect is full refresh... but I think it's appropriate because it considers the situation as the error that it is
   }
 
-  // const currentScrollPosition = Number(searchParams.get(SCROLLPOSITION)) || 0;
-  // console.log(currentScrollPosition);
+  const currentScrollPosition = Number(searchParams.get(SCROLLPOSITION)) || 0;
+
+  const { width, height } = useWindowSize();
+
+  // const currentWindowWidth = Number(searchParams.get(WINDOWWIDTH)) || 1;
+  // hoping for more precision
+  const currentWindowWidth = Number(searchParams.get(WINDOWWIDTH))
+    ? Number(searchParams.get(WINDOWWIDTH))
+    : width
+      ? width
+      : 1;
 
   const currentNoDistraction =
     searchParams.get(NODISTRACTIONS) === "imagesonly"
@@ -74,7 +85,8 @@ export default function Carousel({ images }: { images: string[] }) {
           : "cover"; // default cover
 
   let index = currentPage;
-  // let scrollPosition = currentScrollPosition;
+  let scrollPosition = currentScrollPosition;
+  let windowWidth = currentWindowWidth;
   let noDistracting: "false" | "imagesonly" | "true" = currentNoDistraction;
   let objectFitting: "cover" | "contain" | "scroll" = currentObjectFit;
 
@@ -82,25 +94,37 @@ export default function Carousel({ images }: { images: string[] }) {
     const params = new URLSearchParams(searchParams);
     if (index !== 0) params.set(PAGE, index.toString());
     else params.delete(PAGE);
-    // resetting scrollPosition to 0 (still not enough)
-    // params.delete(SCROLLPOSITION);
+    // resetting scrollPosition
+    params.delete(SCROLLPOSITION);
     push(`${pathname}?${params.toString()}`);
   };
 
-  // const paramsingScrollPosition = (scrollPosition: number) => {
-  //   const params = new URLSearchParams(searchParams);
-  //   params.set(SCROLLPOSITION, scrollPosition.toString());
-  //   replace(`${pathname}?${params.toString()}`);
-  // };
+  const paramsingScrollPosition = (scrollPosition: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set(SCROLLPOSITION, scrollPosition.toString());
+    // with windowWidth
+    params.set(WINDOWWIDTH, width.toString());
+    replace(`${pathname}?${params.toString()}`);
+  };
+
+  // nothing should work during debounce at this time
+  const debouncedParamsingScrollPosition = useDebouncedCallback(
+    // function
+    (scrollPosition: number) => {
+      paramsingScrollPosition(scrollPosition);
+    },
+    // delay in ms
+    100,
+  ); // https://www.npmjs.com/package/use-debounce#debounced-callbacks
 
   const carouselRef = useRef(null);
   const { scrollY } = useScroll({ container: carouselRef });
 
   useMotionValueEvent(scrollY, "change", (current) => {
-    console.log({ current, animationsSet });
-    // if (animationsSet.size === 0) paramsingScrollPosition(current);
+    // console.log({ current, animationsSet });
+    if (animationsSet.size === 0 && objectFitting === "scroll")
+      debouncedParamsingScrollPosition(current);
   }); // https://www.framer.com/motion/use-scroll/##element-scroll
-  // Now my issue is about asynchronism and I assume speed of executions. The set is still when the animation starts.
 
   const paramsingNoDistracting = () => {
     const params = new URLSearchParams(searchParams);
@@ -139,6 +163,7 @@ export default function Carousel({ images }: { images: string[] }) {
     replace(`${pathname}?${params.toString()}`);
   };
 
+  // Just discovered scrollToTop has an issue between pages of different heights.
   const scrollToTop = () =>
     document.getElementById(SCROLLID)!.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -160,6 +185,8 @@ export default function Carousel({ images }: { images: string[] }) {
   const setIndexSelected = (i: number) => paramsingIndex(i);
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
+    if (debouncedParamsingScrollPosition.isPending()) return;
+
     // if (event.metaKey) return; // back();
     if (event.metaKey) {
       // The default is the behavior I'm seeking. But since I can't be sure that every browser has the same default as Firefox, I choose to do it manually with the tool provided by Next.js to make sure.
@@ -171,11 +198,12 @@ export default function Carousel({ images }: { images: string[] }) {
     if (index > 0) {
       if (event.shiftKey) setIndexMinusTen(index);
       else setIndexMinusOne(index);
-      scrollToTop();
     }
   });
 
   useKeypress("ArrowRight", (event: KeyboardEvent) => {
+    if (debouncedParamsingScrollPosition.isPending()) return;
+
     if (event.metaKey) {
       event.preventDefault();
       return forward();
@@ -185,45 +213,49 @@ export default function Carousel({ images }: { images: string[] }) {
     if (index < images.length - 1) {
       if (event.shiftKey) setIndexPlusTen(index);
       else setIndexPlusOne(index);
-      scrollToTop();
     }
   });
 
   useKeypress("ArrowUp", (event: KeyboardEvent) => {
+    if (debouncedParamsingScrollPosition.isPending()) return;
+
     event.preventDefault();
 
     if (event.shiftKey) {
       setIndexFirst();
-      scrollToTop();
     } else {
       scrollToTop();
     }
   });
 
   useKeypress("ArrowDown", (event: KeyboardEvent) => {
+    if (debouncedParamsingScrollPosition.isPending()) return;
+
     event.preventDefault();
 
     if (event.shiftKey) {
       setIndexLast();
-      scrollToTop();
     } else {
       scrollToBottom();
     }
   });
 
   useKeypress("Backspace", (event: KeyboardEvent) => {
+    if (debouncedParamsingScrollPosition.isPending()) return;
+
     event.preventDefault();
     if (event.shiftKey) reverseParamsingNoDistracting();
     else paramsingNoDistracting();
   });
 
   useKeypress("Enter", (event: KeyboardEvent) => {
+    if (debouncedParamsingScrollPosition.isPending()) return;
+
     event.preventDefault();
     if (event.shiftKey) reverseParamsingObjectFitting();
     else paramsingObjectFitting();
   });
 
-  const { width, height } = useWindowSize();
   let objectFittingScrollHeight = useMotionValue(height);
 
   useEffect(() => {
@@ -232,13 +264,31 @@ export default function Carousel({ images }: { images: string[] }) {
         `${IMAGEID + index}`,
       ) as HTMLImageElement;
       const imageDecoding = async () => await image.decode();
-      imageDecoding().then(() => {
-        objectFittingScrollHeight.set(
-          document.getElementById(`${IMAGEID + index}`)!.clientHeight,
-        );
-      });
+
+      imageDecoding()
+        .then(() => {
+          objectFittingScrollHeight.set(
+            document.getElementById(`${IMAGEID + index}`)!.clientHeight,
+          );
+        })
+        .then(() => {
+          // replacing width by window.innerWidth because width begins at 0, but to no avail so far, I believe because animations are still ongoing (animationsSet.size > 0)
+          // console.log({ width, windowWidth, scrollPosition, animationsSet });
+          // console.log(window.innerWidth);
+          // console.log(document.getElementById(SCROLLID));
+          // the problem was specific to nodistractions=true
+
+          // I think it works...
+          document.getElementById(SCROLLID)!.scrollTo({
+            // And with just a bit of math...
+            top: Math.floor((scrollPosition * width) / windowWidth),
+            behavior: "instant",
+          });
+        });
     }
   }, [index, objectFitting, width, images]);
+
+  // to hide the mouse when idle
 
   const onIdle = () => {
     document.getElementById(CAROUSEL)!.style.cursor = "none";
@@ -255,43 +305,47 @@ export default function Carousel({ images }: { images: string[] }) {
     events: ["mousemove"],
   });
 
-  /* NEXT UP WOULD BE:
-  - PRODUCTION, Framer Motion interruptability does not work in production, which I'll need to understand.
-  For now, the behavior is exactly the same as when pressing the buttons on screen... which honestly is not that big of a deal, currently.
-
-  - remembering scroll position in and out of scroll (actually in URL)
-  I need to be able to define exactly what I want to do here.
-  1. I want to have control over the animation of scrollTo, so that if effective it could match the duration and ease of MotionConfig. This makes me believe that scrollTo should be made with Framer Motion instead of through CSS, JavaScript and the browser.
-  2. I want to be able to save the scroll position with a scrollposition params at all times when a user scrolls the page (or rather scrolls SCROLLID)
-  3. I want to make sure that this scrollposition is not updated while all current Framer Motion animations on "carousel core" are still ongoing.
-  4. Which is why I need to have the list of all 
-
-  - keyboard tabbing navigation and focus-visible styles
-  (But that's going to be a huge chunk.)
-
-  - a images folder selector based on the folders in /public
-  - Or even making the app work locally with any compliant images folder on your computer. Ideal for manga-reading.
-  */
+  // to track when all animations are still active
 
   const [animationsSet, setAnimationsSet] = useState<Set<string>>(new Set());
 
   function onStart(definition: AnimationDefinition) {
     const def = JSON.stringify(definition);
-    // console.log("Started animating", def);
     const set = animationsSet;
     set.add(def);
     setAnimationsSet(set);
-    // console.log({ animationsSet });
+    scrollToTop();
   }
 
   function onComplete(definition: AnimationDefinition) {
     const def = JSON.stringify(definition);
-    // console.log("Completed animating", def);
     const set = animationsSet;
     set.delete(def);
     setAnimationsSet(set);
-    // console.log({ animationsSet });
   }
+
+  /* NEXT UP WOULD BE:
+  - PRODUCTION, Framer Motion interruptability does not work in production, which I'll need to understand.
+  For now, the behavior is exactly the same as when pressing the buttons on screen... which honestly is not that big of a deal, currently.
+
+  Now only three fixes to be made:
+  1. useDebounce so that I can flush the callback on interrupting page changes. // SOLUTION CHOSEN IS DEACTIVATING CHANGES DURING DEBOUNCE
+  2. retrocompatibilize the math of windowWidth especially at the page bottoms // okay for now, it isn't an indispensable feature
+  3. ...and some inconsistences when loading at scroll position
+  (Scroll position isn't taken into account on mount I think.) // this I really need to understand and hopefully solve though.) // APPARENTLY IT WORKS. MY WORK HERE IS DONE?
+  ... The issue only applies to nodistractions=true. After many tests and changes I have zero idea where the idea could be. But it's a minor issue that can be ignored by saving URLs that do not have nodistractions=true.
+
+  In a future remake of the project after further Framer Motion knowledge:
+  - remove objectFitting cover
+  - making scrollToTop and other in-between-pages scrolling indiscriminate across different page heights
+  - keyboard tabbing navigation and focus-visible styles
+  (But that's going to be a huge chunk.)
+  - an images folder selector based on the folders in /public
+  - Or even making the app work locally with any compliant images folder on your computer. Ideal for manga-reading.
+  - ...OR even better eventually, use the project as a means to try uploadthing, where users would upload their owns picture folders on the web: https://uploadthing.com/
+
+  Objectively this is a project I'm going to have to remake, and I'd love to do it with uploadThing. People upload their chapters, and then they read them.
+  */
 
   return (
     <div
@@ -358,15 +412,19 @@ export default function Carousel({ images }: { images: string[] }) {
               </motion.div>
             </div>
 
-            {noDistracting === "false" && (
+            {/* no effect on the nodistractions=true scrollposition issue */}
+            {/* {noDistracting === "false" && ( */}
+            <div className={clsx(noDistracting !== "false" && "invisible")}>
               <AnimatePresence initial={false}>
                 {index > 0 && (
                   <>
                     <ChevronButton
                       isLeft={true}
                       handleClick={() => {
+                        // unnecessarily but we never know
+                        if (debouncedParamsingScrollPosition.isPending())
+                          return;
                         setIndexMinusOne(index);
-                        scrollToTop();
                       }}
                     >
                       <ChevronLeftIcon />
@@ -374,97 +432,108 @@ export default function Carousel({ images }: { images: string[] }) {
                   </>
                 )}
               </AnimatePresence>
-            )}
+            </div>
+            {/* )} */}
 
-            {noDistracting === "false" && (
+            {/* no effect on the nodistractions=true scrollposition issue */}
+            {/* {noDistracting === "false" && ( */}
+            <div className={clsx(noDistracting !== "false" && "invisible")}>
               <AnimatePresence initial={false}>
                 {index + 1 < images.length && (
                   <ChevronButton
                     isLeft={false}
                     handleClick={() => {
+                      if (debouncedParamsingScrollPosition.isPending()) return;
                       setIndexPlusOne(index);
-                      scrollToTop();
                     }}
                   >
                     <ChevronRightIcon />
                   </ChevronButton>
                 )}
               </AnimatePresence>
-            )}
-          </div>
-          {(noDistracting === "false" || noDistracting === "imagesonly") && (
-            <div className="absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden">
-              <motion.div
-                initial={false}
-                animate={{
-                  x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
-                }}
-                style={{ aspectRatio: fullAspectRatio, gap: `${gap}%` }}
-                className="flex"
-              >
-                {images.map((imageUrl, i) => {
-                  let image = index === i ? "full" : "collapsed";
-                  let imageHover = index === i ? "fullHover" : "collapsedHover";
-                  let imageTap = index === i ? "fullTap" : "collapsedTap";
-
-                  return (
-                    <motion.div
-                      key={imageUrl}
-                      initial={false}
-                      animate={image}
-                      whileHover={imageHover}
-                      whileTap={imageTap}
-                      variants={{
-                        full: {
-                          aspectRatio: fullAspectRatio,
-                          marginLeft: `${fullMargin}%`,
-                          marginRight: `${fullMargin}%`,
-                          opacity: 1,
-                        },
-                        collapsed: {
-                          aspectRatio: collapsedAspectRatio,
-                          marginLeft: 0,
-                          marginRight: 0,
-                          opacity: 0.5,
-                        },
-                        fullHover: {},
-                        collapsedHover: {
-                          opacity: 0.8,
-                          transition: { duration: 0.1 },
-                        },
-                        fullTap: {},
-                        collapsedTap: {
-                          opacity: 0.9,
-                          transition: { duration: 0.1 },
-                        },
-                      }}
-                      className="flex shrink-0 justify-center"
-                    >
-                      {(objectFitting === "contain" ||
-                        objectFitting === "scroll") && (
-                        // For accessibility, that will need to be a button, preferrably for all objectFittings.
-                        <img
-                          src={imageUrl}
-                          alt=""
-                          className="h-full cursor-pointer object-cover"
-                          onClick={() => setIndexSelected(i)}
-                        />
-                      )}
-                      {objectFitting === "cover" && (
-                        <button
-                          className={`h-full w-full bg-cover bg-center`}
-                          style={{
-                            backgroundImage: `url("${imageUrl}")`,
-                          }}
-                          onClick={() => setIndexSelected(i)}
-                        />
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
             </div>
-          )}
+            {/* )} */}
+          </div>
+
+          {/* no effect on the nodistractions=true scrollposition issue */}
+          {/* {(noDistracting === "false" || noDistracting === "imagesonly") && ( */}
+          <div
+            className={clsx(
+              "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
+              noDistracting === "true" && "invisible",
+            )}
+          >
+            <motion.div
+              initial={false}
+              animate={{
+                x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
+              }}
+              style={{ aspectRatio: fullAspectRatio, gap: `${gap}%` }}
+              className="flex"
+            >
+              {images.map((imageUrl, i) => {
+                let image = index === i ? "full" : "collapsed";
+                let imageHover = index === i ? "fullHover" : "collapsedHover";
+                let imageTap = index === i ? "fullTap" : "collapsedTap";
+
+                return (
+                  <motion.div
+                    key={imageUrl}
+                    initial={false}
+                    animate={image}
+                    whileHover={imageHover}
+                    whileTap={imageTap}
+                    variants={{
+                      full: {
+                        aspectRatio: fullAspectRatio,
+                        marginLeft: `${fullMargin}%`,
+                        marginRight: `${fullMargin}%`,
+                        opacity: 1,
+                      },
+                      collapsed: {
+                        aspectRatio: collapsedAspectRatio,
+                        marginLeft: 0,
+                        marginRight: 0,
+                        opacity: 0.5,
+                      },
+                      fullHover: {},
+                      collapsedHover: {
+                        opacity: 0.8,
+                        transition: { duration: 0.1 },
+                      },
+                      fullTap: {},
+                      collapsedTap: {
+                        opacity: 0.9,
+                        transition: { duration: 0.1 },
+                      },
+                    }}
+                    className="flex shrink-0 justify-center"
+                  >
+                    {(objectFitting === "contain" ||
+                      objectFitting === "scroll") && (
+                      // For accessibility, that will need to be a button, preferrably for all objectFittings.
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="h-full cursor-pointer object-cover"
+                        onClick={() => setIndexSelected(i)}
+                      />
+                    )}
+                    {objectFitting === "cover" && (
+                      <button
+                        className={`h-full w-full bg-cover bg-center`}
+                        style={{
+                          backgroundImage: `url("${imageUrl}")`,
+                        }}
+                        onClick={() => setIndexSelected(i)}
+                      />
+                    )}
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
+          {/* )} */}
         </div>
       </MotionConfig>
     </div>
@@ -612,4 +681,11 @@ PREVIOUS REFLECTIONS:
   // Does the scrollTop has the same speed as the transition? It doesn't it's duration in independent. First, I want it to be the same.
   // ...
   // OK the first thing I want to do is, match the scrollTop speed with that of the motion config. If that works, it's a good start.
+PREVIOUS TASKS:
+- remembering scroll position in and out of scroll (actually in URL)
+  I need to be able to define exactly what I want to do here.
+  1. I want to have control over the animation of scrollTo, so that if effective it could match the duration and ease of MotionConfig. This makes me believe that scrollTo should be made with Framer Motion instead of through CSS, JavaScript and the browser.
+  2. I want to be able to save the scroll position with a scrollposition params at all times when a user scrolls the page (or rather scrolls SCROLLID)
+  3. I want to make sure that this scrollposition is not updated while all current Framer Motion animations on "carousel core" are still ongoing.
+  4. Which is why I need to have the list of all // DONE.
 */
