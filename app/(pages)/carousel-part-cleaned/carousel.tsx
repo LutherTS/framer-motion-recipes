@@ -40,7 +40,7 @@ const IMAGEID = "image-";
 const CAROUSEL = "carousel";
 
 // No idea why console.logs get printed six times in Carousel sometimes.
-// There's also some inconsistencies with interuptability.
+// There's also some inconsistencies with interruptability.
 export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
   const { push, replace, back, forward } = useRouter(); // push instead of replace to go back and forth in the browser's history, now only for pages, replace for other parameters
@@ -128,44 +128,45 @@ export default function Carousel({ images }: { images: string[] }) {
       debouncedParamsingScrollPosition(current);
   }); // https://www.framer.com/motion/use-scroll/##element-scroll
 
-  const paramsingNoDistracting = () => {
+  const noDistractings = ["false", "imagesonly", "true"] as const;
+
+  // voluntarily removed cover
+  const objectFittings = [
+    // "cover",
+    "contain",
+    "scroll",
+  ] as const;
+
+  const rotateParams = (
+    direction: "left" | "right",
+    paramsKey: string,
+    paramsArray: readonly string[],
+    paramsValue: string,
+  ) => {
     const params = new URLSearchParams(searchParams);
-    if (noDistracting === "true") params.set(NODISTRACTIONS, "false");
-    else if (noDistracting === "false")
-      params.set(NODISTRACTIONS, "imagesonly");
-    else params.set(NODISTRACTIONS, "true");
+    if (direction === "right")
+      params.set(
+        paramsKey,
+        paramsArray.at(
+          paramsArray.indexOf(paramsValue) + 1 > paramsArray.length - 1
+            ? 0
+            : paramsArray.indexOf(paramsValue) + 1,
+        )!,
+      );
+    else
+      params.set(
+        paramsKey,
+        // .at() handles rotation on its own for negative values
+        paramsArray.at(paramsArray.indexOf(paramsValue) - 1)!,
+      );
     replace(`${pathname}?${params.toString()}`);
   };
 
-  const reverseParamsingNoDistracting = () => {
-    const params = new URLSearchParams(searchParams);
-    if (noDistracting === "true") params.set(NODISTRACTIONS, "imagesonly");
-    else if (noDistracting === "imagesonly")
-      params.set(NODISTRACTIONS, "false");
-    else params.set(NODISTRACTIONS, "true");
-    replace(`${pathname}?${params.toString()}`);
-  };
+  const rotateNoDistracting = (direction: "left" | "right") =>
+    rotateParams(direction, NODISTRACTIONS, noDistractings, noDistracting);
 
-  const paramsingObjectFitting = () => {
-    const params = new URLSearchParams(searchParams);
-    // @ts-ignore for cover removed voluntarily
-    if (objectFitting === "cover") params.set(OBJECTFIT, "contain");
-    else if (objectFitting === "contain") params.set(OBJECTFIT, "scroll");
-    else {
-      params.set(OBJECTFIT, "cover");
-    }
-    replace(`${pathname}?${params.toString()}`);
-  };
-
-  const reverseParamsingObjectFitting = () => {
-    const params = new URLSearchParams(searchParams);
-    // @ts-ignore for cover removed voluntarily
-    if (objectFitting === "cover") params.set(OBJECTFIT, "scroll");
-    else if (objectFitting === "scroll") {
-      params.set(OBJECTFIT, "contain");
-    } else params.set(OBJECTFIT, "cover");
-    replace(`${pathname}?${params.toString()}`);
-  };
+  const rotateObjectFitting = (direction: "left" | "right") =>
+    rotateParams(direction, OBJECTFIT, objectFittings, objectFitting);
 
   // Just discovered scrollToTop has an issue between pages of different heights.
   const scrollToTop = () =>
@@ -258,16 +259,16 @@ export default function Carousel({ images }: { images: string[] }) {
     if (debouncedParamsingScrollPosition.isPending()) return;
 
     event.preventDefault();
-    if (event.shiftKey) reverseParamsingNoDistracting();
-    else paramsingNoDistracting();
+    if (event.shiftKey) rotateNoDistracting("left");
+    else rotateNoDistracting("right");
   });
 
   useKeypress("Enter", (event: KeyboardEvent) => {
     if (debouncedParamsingScrollPosition.isPending()) return;
 
     event.preventDefault();
-    if (event.shiftKey) reverseParamsingObjectFitting();
-    else paramsingObjectFitting();
+    if (event.shiftKey) rotateObjectFitting("left");
+    else rotateObjectFitting("right");
   });
 
   let objectFittingScrollHeight = useMotionValue(height);
