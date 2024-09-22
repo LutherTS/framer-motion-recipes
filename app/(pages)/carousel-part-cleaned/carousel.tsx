@@ -81,8 +81,10 @@ export default function Carousel({ images }: { images: string[] }) {
       : searchParams.get(OBJECTFIT) === "scroll"
         ? "scroll"
         : searchParams.get(OBJECTFIT) === "cover"
-          ? "cover"
-          : "cover"; // default cover
+          ? "contain"
+          : "contain"; // voluntarily removed cover
+  // ? "cover"
+  // : "cover"; // default cover
 
   let index = currentPage;
   let scrollPosition = currentScrollPosition;
@@ -146,6 +148,7 @@ export default function Carousel({ images }: { images: string[] }) {
 
   const paramsingObjectFitting = () => {
     const params = new URLSearchParams(searchParams);
+    // @ts-ignore for cover removed voluntarily
     if (objectFitting === "cover") params.set(OBJECTFIT, "contain");
     else if (objectFitting === "contain") params.set(OBJECTFIT, "scroll");
     else {
@@ -156,6 +159,7 @@ export default function Carousel({ images }: { images: string[] }) {
 
   const reverseParamsingObjectFitting = () => {
     const params = new URLSearchParams(searchParams);
+    // @ts-ignore for cover removed voluntarily
     if (objectFitting === "cover") params.set(OBJECTFIT, "scroll");
     else if (objectFitting === "scroll") {
       params.set(OBJECTFIT, "contain");
@@ -336,7 +340,7 @@ export default function Carousel({ images }: { images: string[] }) {
   ... The issue only applies to nodistractions=true. After many tests and changes I have zero idea where the idea could be. But it's a minor issue that can be ignored by saving URLs that do not have nodistractions=true.
 
   In a future remake of the project after further Framer Motion knowledge:
-  - remove objectFitting cover
+  - remove objectFitting cover // now removed voluntarily
   - making scrollToTop and other in-between-pages scrolling indiscriminate across different page heights
   - keyboard tabbing navigation and focus-visible styles
   (But that's going to be a huge chunk.)
@@ -400,6 +404,7 @@ export default function Carousel({ images }: { images: string[] }) {
                           "w-full",
                           objectFitting === "contain" &&
                             "h-screen object-contain",
+                          // @ts-ignore for cover removed voluntarily
                           objectFitting === "cover" && "h-screen object-cover",
                           objectFitting === "scroll" && "",
                         )}
@@ -517,6 +522,7 @@ export default function Carousel({ images }: { images: string[] }) {
                         onClick={() => setIndexSelected(i)}
                       />
                     )}
+                    {/* @ts-ignore for cover removed voluntarily */}
                     {objectFitting === "cover" && (
                       <button
                         className={`h-full w-full bg-cover bg-center`}
