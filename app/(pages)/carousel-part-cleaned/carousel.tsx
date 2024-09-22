@@ -171,12 +171,6 @@ export default function Carousel({ images }: { images: string[] }) {
   const scrollToTop = () =>
     document.getElementById(SCROLLID)!.scrollTo({ top: 0, behavior: "smooth" });
 
-  const scrollToBottom = () =>
-    document.getElementById(SCROLLID)!.scrollTo({
-      top: document.getElementById(SCROLLID)!.scrollHeight,
-      behavior: "smooth",
-    });
-
   // setIndexFunctionNames kept in reference to original state lifted to URL
   const setIndexPlusOne = (index: number) => paramsingIndex(index + 1);
   const setIndexMinusOne = (index: number) => paramsingIndex(index - 1);
@@ -220,6 +214,12 @@ export default function Carousel({ images }: { images: string[] }) {
     }
   });
 
+  /* FLASH NOTE
+  metaKey+"ArrowUp" and metaKey+"ArrowDown" already do scrollToTop and scrollToBottom natively so I could instead scroll to the next portion of the page via the window's height. // DONE.
+  There's a rounding to 1 here that's a little confusing (reminds me of my Webflow University lessons) but it's insignificant enough to be ignored.
+  And now maybe I can reduce the debounce time to something not humanly noticeable. Nope, it's unrelated. This is something else I'll be able to handle with Framer Motion-based scrolling I hope.
+  */
+
   useKeypress("ArrowUp", (event: KeyboardEvent) => {
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -228,7 +228,12 @@ export default function Carousel({ images }: { images: string[] }) {
     if (event.shiftKey) {
       setIndexFirst();
     } else {
-      scrollToTop();
+      const scrollId = document.getElementById(SCROLLID)!;
+      if (currentScrollPosition > 0)
+        scrollId.scrollTo({
+          top: currentScrollPosition - height,
+          behavior: "smooth",
+        });
     }
   });
 
@@ -240,7 +245,12 @@ export default function Carousel({ images }: { images: string[] }) {
     if (event.shiftKey) {
       setIndexLast();
     } else {
-      scrollToBottom();
+      const scrollId = document.getElementById(SCROLLID)!;
+      if (height + currentScrollPosition < scrollId.scrollHeight)
+        scrollId.scrollTo({
+          top: currentScrollPosition + height,
+          behavior: "smooth",
+        });
     }
   });
 
@@ -692,4 +702,16 @@ PREVIOUS TASKS:
   2. I want to be able to save the scroll position with a scrollposition params at all times when a user scrolls the page (or rather scrolls SCROLLID)
   3. I want to make sure that this scrollposition is not updated while all current Framer Motion animations on "carousel core" are still ongoing.
   4. Which is why I need to have the list of all // DONE.
+
+    // console.log({
+    //   currentScrollPosition,
+    //   height,
+    //   scrollHeight: scrollId.scrollHeight,
+    // });
+  
+  const scrollToBottom = () =>
+    document.getElementById(SCROLLID)!.scrollTo({
+      top: document.getElementById(SCROLLID)!.scrollHeight,
+      behavior: "smooth",
+    });
 */
