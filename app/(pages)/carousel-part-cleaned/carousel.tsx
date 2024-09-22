@@ -342,9 +342,7 @@ export default function Carousel({ images }: { images: string[] }) {
   (But that's going to be a huge chunk.)
   - an images folder selector based on the folders in /public
   - Or even making the app work locally with any compliant images folder on your computer. Ideal for manga-reading.
-  - ...OR even better eventually, use the project as a means to try uploadthing, where users would upload their owns picture folders on the web: https://uploadthing.com/
-
-  Objectively this is a project I'm going to have to remake, and I'd love to do it with uploadThing. People upload their chapters, and then they read them.
+  - ...OR even better eventually, use the project as a means to try uploadthing, where users would upload their owns picture folders on the web: https://uploadthing.com/.
   */
 
   return (
