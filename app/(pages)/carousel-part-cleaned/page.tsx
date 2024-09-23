@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+
 import { Suspense } from "react";
 
 import Carousel from "./carousel";
@@ -18,7 +19,7 @@ export default async function Page({
   };
 }) {
   let imagesSet = Math.floor(Number(searchParams?.images)) || 0;
-  if (imagesSet < 0 || imagesSet > IMAGES_SET_LIMIT.dev) imagesSet = 0;
+  if (imagesSet < 0 || imagesSet > IMAGES_SET_LIMIT.prod) imagesSet = 0;
 
   let images: string[];
 
