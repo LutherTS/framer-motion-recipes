@@ -7,8 +7,8 @@ import Carousel from "./carousel";
 const DEFAULT_DIRECTORY = "./public/images0";
 
 const IMAGES_SET_LIMIT = {
-  dev: 9,
   prod: 1,
+  dev: 9,
 } as const;
 
 export default async function Page({
@@ -19,7 +19,13 @@ export default async function Page({
   };
 }) {
   let imagesSet = Math.floor(Number(searchParams?.images)) || 0;
-  if (imagesSet < 0 || imagesSet > IMAGES_SET_LIMIT.prod) imagesSet = 0;
+
+  let limit =
+    process.env.NODE_ENV === "production"
+      ? IMAGES_SET_LIMIT.prod
+      : IMAGES_SET_LIMIT.dev;
+
+  if (imagesSet < 0 || imagesSet > limit) imagesSet = 0;
 
   let images: string[];
 
@@ -71,4 +77,5 @@ const directory = "./images";
 fs.readdir(directory, (error: NodeJS.ErrnoException | null, files: string[]) => console.log(files.length));
 ...
 I had no idea I could/should do all that fs stuff from inside the component.
+Lifesaver: https://stackoverflow.com/a/78820791 
 */
