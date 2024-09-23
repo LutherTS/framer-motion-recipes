@@ -29,6 +29,7 @@ let collapsedAspectRatio = 1 / 3;
 let gap = 4;
 let fullMargin = 12 - gap;
 
+const IMAGES = "images";
 const PAGE = "page";
 const SCROLLPOSITION = "scrollposition";
 const WINDOWWIDTH = "windowwidth";
@@ -39,7 +40,15 @@ const SCROLLID = "to-be-scrolled";
 const IMAGEID = "image-";
 const CAROUSEL = "carousel";
 
-export default function Carousel({ images }: { images: string[] }) {
+// No idea why console.logs got printed six times in Carousel sometimes.
+// There's also been some inconsistencies with interruptability.
+export default function Carousel({
+  images,
+  isDefaultDirectory,
+}: {
+  images: string[];
+  isDefaultDirectory: boolean;
+}) {
   const pathname = usePathname();
   const { push, replace, back, forward } = useRouter(); // push instead of replace to go back and forth in the browser's history, now only for pages, replace for other parameters
   const searchParams = useSearchParams();
@@ -72,17 +81,27 @@ export default function Carousel({ images }: { images: string[] }) {
           ? "false"
           : "false"; // default false
 
-  // currentObjectFit kept in reference to originally being only contain and cover
-  const currentObjectFit =
+  let currentObjectFit: "cover" | "contain" | "scroll" = isDefaultDirectory
+    ? "cover"
+    : "contain";
+
+  if (isDefaultDirectory) {
     searchParams.get(OBJECTFIT) === "contain"
-      ? "contain"
+      ? (currentObjectFit = "contain")
       : searchParams.get(OBJECTFIT) === "scroll"
-        ? "scroll"
+        ? (currentObjectFit = "scroll")
         : searchParams.get(OBJECTFIT) === "cover"
-          ? "contain"
-          : "contain"; // voluntarily removed cover
-  // ? "cover"
-  // : "cover"; // default cover
+          ? (currentObjectFit = "cover")
+          : (currentObjectFit = "cover");
+  } else {
+    searchParams.get(OBJECTFIT) === "contain"
+      ? (currentObjectFit = "contain")
+      : searchParams.get(OBJECTFIT) === "scroll"
+        ? (currentObjectFit = "scroll")
+        : searchParams.get(OBJECTFIT) === "cover"
+          ? (currentObjectFit = "contain")
+          : (currentObjectFit = "contain"); // voluntarily removed cover
+  }
 
   let index = currentPage;
   let scrollPosition = currentScrollPosition;
@@ -128,12 +147,10 @@ export default function Carousel({ images }: { images: string[] }) {
 
   const noDistractings = ["false", "imagesonly", "true"] as const;
 
+  const objectFittingsWithCover = ["cover", "contain", "scroll"] as const;
+
   // voluntarily removed cover
-  const objectFittings = [
-    // "cover",
-    "contain",
-    "scroll",
-  ] as const;
+  const objectFittingsWithoutCover = ["contain", "scroll"] as const;
 
   const rotateParams = (
     direction: "left" | "right",
@@ -163,12 +180,23 @@ export default function Carousel({ images }: { images: string[] }) {
   const rotateNoDistracting = (direction: "left" | "right") =>
     rotateParams(direction, NODISTRACTIONS, noDistractings, noDistracting);
 
-  const rotateObjectFitting = (direction: "left" | "right") =>
-    rotateParams(direction, OBJECTFIT, objectFittings, objectFitting);
+  const rotateObjectFitting = (direction: "left" | "right") => {
+    rotateParams(
+      direction,
+      OBJECTFIT,
+      isDefaultDirectory ? objectFittingsWithCover : objectFittingsWithoutCover,
+      objectFitting,
+    );
+  };
 
-  // Just discovered scrollToTop has an issue between pages of different heights.
   const scrollToTop = () =>
     document.getElementById(SCROLLID)!.scrollTo({ top: 0, behavior: "smooth" });
+
+  const scrollToBottom = () =>
+    document.getElementById(SCROLLID)!.scrollTo({
+      top: document.getElementById(SCROLLID)!.scrollHeight,
+      behavior: "smooth",
+    });
 
   // setIndexFunctionNames kept in reference to original state lifted to URL
   const setIndexPlusOne = (index: number) => paramsingIndex(index + 1);
@@ -182,16 +210,15 @@ export default function Carousel({ images }: { images: string[] }) {
   const setIndexSelected = (i: number) => paramsingIndex(i);
 
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
+    event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
     // if (event.metaKey) return; // back();
     if (event.metaKey) {
       // The default is the behavior I'm seeking. But since I can't be sure that every browser has the same default as Firefox, I choose to do it manually with the tool provided by Next.js to make sure.
-      event.preventDefault();
       return back();
     }
 
-    event.preventDefault();
     if (index > 0) {
       if (event.shiftKey) setIndexMinusTen(index);
       else setIndexMinusOne(index);
@@ -199,14 +226,13 @@ export default function Carousel({ images }: { images: string[] }) {
   });
 
   useKeypress("ArrowRight", (event: KeyboardEvent) => {
+    event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
     if (event.metaKey) {
-      event.preventDefault();
       return forward();
     }
 
-    event.preventDefault();
     if (index < images.length - 1) {
       if (event.shiftKey) setIndexPlusTen(index);
       else setIndexPlusOne(index);
@@ -220,12 +246,13 @@ export default function Carousel({ images }: { images: string[] }) {
   */
 
   useKeypress("ArrowUp", (event: KeyboardEvent) => {
-    if (debouncedParamsingScrollPosition.isPending()) return;
-
     event.preventDefault();
+    if (debouncedParamsingScrollPosition.isPending()) return;
 
     if (event.shiftKey) {
       setIndexFirst();
+    } else if (event.metaKey) {
+      scrollToTop();
     } else {
       const scrollId = document.getElementById(SCROLLID)!;
       if (currentScrollPosition > 0)
@@ -237,12 +264,13 @@ export default function Carousel({ images }: { images: string[] }) {
   });
 
   useKeypress("ArrowDown", (event: KeyboardEvent) => {
-    if (debouncedParamsingScrollPosition.isPending()) return;
-
     event.preventDefault();
+    if (debouncedParamsingScrollPosition.isPending()) return;
 
     if (event.shiftKey) {
       setIndexLast();
+    } else if (event.metaKey) {
+      scrollToBottom();
     } else {
       const scrollId = document.getElementById(SCROLLID)!;
       if (height + currentScrollPosition < scrollId.scrollHeight)
@@ -254,22 +282,34 @@ export default function Carousel({ images }: { images: string[] }) {
   });
 
   useKeypress("Backspace", (event: KeyboardEvent) => {
+    event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
-    event.preventDefault();
     if (event.shiftKey) rotateNoDistracting("left");
     else rotateNoDistracting("right");
   });
 
   useKeypress("Enter", (event: KeyboardEvent) => {
+    event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
-    event.preventDefault();
     if (event.shiftKey) rotateObjectFitting("left");
     else rotateObjectFitting("right");
   });
 
+  // useKeypress for selecting image sources
+
+  const numberKeys = Array.from({ length: 10 }, (_, i) => i.toString());
+
+  useKeypress(numberKeys, (event: KeyboardEvent) => {
+    event.preventDefault();
+
+    push(`${pathname}?images=${event.key}`);
+  });
+
   let objectFittingScrollHeight = useMotionValue(height);
+
+  // core useEffect // await decoding, rational scroll positioning
 
   useEffect(() => {
     if (objectFitting === "scroll") {
@@ -365,8 +405,8 @@ export default function Carousel({ images }: { images: string[] }) {
       className="flex items-center overflow-y-hidden bg-black"
     >
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-        {/* removed mx-auto */}
-        <div className="flex h-full flex-col">
+        {/* removed mx-auto h-full */}
+        <div className="flex flex-col">
           <div
             className="h-screen overflow-x-hidden"
             id={SCROLLID}
@@ -413,7 +453,6 @@ export default function Carousel({ images }: { images: string[] }) {
                           "w-full",
                           objectFitting === "contain" &&
                             "h-screen object-contain",
-                          // @ts-ignore for cover removed voluntarily
                           objectFitting === "cover" && "h-screen object-cover",
                           objectFitting === "scroll" && "",
                         )}
@@ -531,7 +570,6 @@ export default function Carousel({ images }: { images: string[] }) {
                         onClick={() => setIndexSelected(i)}
                       />
                     )}
-                    {/* @ts-ignore for cover removed voluntarily */}
                     {objectFitting === "cover" && (
                       <button
                         className={`h-full w-full bg-cover bg-center`}
@@ -715,6 +753,9 @@ PREVIOUS TASKS:
     });
 ...
 NOT ANYMORE APPARENTLY:
-// No idea why console.logs get printed six times in Carousel sometimes.
-// There's also some inconsistencies with interruptability.
+// Just discovered scrollToTop has an issue between pages of different heights.
+PREVIOUS:
+// const params = new URLSearchParams(searchParams);
+// params.set(IMAGES, event.key);
+// push(`${pathname}?${params.toString()}`);
 */
