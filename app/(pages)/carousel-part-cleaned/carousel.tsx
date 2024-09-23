@@ -39,8 +39,6 @@ const SCROLLID = "to-be-scrolled";
 const IMAGEID = "image-";
 const CAROUSEL = "carousel";
 
-// No idea why console.logs get printed six times in Carousel sometimes.
-// There's also some inconsistencies with interruptability.
 export default function Carousel({ images }: { images: string[] }) {
   const pathname = usePathname();
   const { push, replace, back, forward } = useRouter(); // push instead of replace to go back and forth in the browser's history, now only for pages, replace for other parameters
@@ -715,4 +713,8 @@ PREVIOUS TASKS:
       top: document.getElementById(SCROLLID)!.scrollHeight,
       behavior: "smooth",
     });
+...
+NOT ANYMORE APPARENTLY:
+// No idea why console.logs get printed six times in Carousel sometimes.
+// There's also some inconsistencies with interruptability.
 */
