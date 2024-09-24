@@ -72,8 +72,6 @@ export default function Carousel({
       ? width
       : 1;
 
-  // going to implement "chevronsonly"
-
   const currentNoDistraction =
     searchParams.get(NODISTRACTIONS) === "imagesonly"
       ? "imagesonly"
