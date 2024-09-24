@@ -72,14 +72,18 @@ export default function Carousel({
       ? width
       : 1;
 
+  // going to implement "chevronsonly"
+
   const currentNoDistraction =
     searchParams.get(NODISTRACTIONS) === "imagesonly"
       ? "imagesonly"
-      : searchParams.get(NODISTRACTIONS) === "true"
-        ? "true"
-        : searchParams.get(NODISTRACTIONS) === "false"
-          ? "false"
-          : "false"; // default false
+      : searchParams.get(NODISTRACTIONS) === "chevronsonly"
+        ? "chevronsonly"
+        : searchParams.get(NODISTRACTIONS) === "true"
+          ? "true"
+          : searchParams.get(NODISTRACTIONS) === "false"
+            ? "false"
+            : "false"; // default false
 
   let currentObjectFit: "cover" | "contain" | "scroll" = isDefaultDirectory
     ? "cover"
@@ -106,7 +110,8 @@ export default function Carousel({
   let index = currentPage;
   let scrollPosition = currentScrollPosition;
   let windowWidth = currentWindowWidth;
-  let noDistracting: "false" | "imagesonly" | "true" = currentNoDistraction;
+  let noDistracting: "false" | "imagesonly" | "chevronsonly" | "true" =
+    currentNoDistraction;
   let objectFitting: "cover" | "contain" | "scroll" = currentObjectFit;
 
   const paramsingIndex = (index: number) => {
@@ -145,7 +150,12 @@ export default function Carousel({
       debouncedParamsingScrollPosition(current);
   }); // https://www.framer.com/motion/use-scroll/##element-scroll
 
-  const noDistractings = ["false", "imagesonly", "true"] as const;
+  const noDistractings = [
+    "false",
+    "imagesonly",
+    "chevronsonly",
+    "true",
+  ] as const;
 
   const objectFittingsWithCover = ["cover", "contain", "scroll"] as const;
 
@@ -465,7 +475,13 @@ export default function Carousel({
 
             {/* no effect on the nodistractions=true scrollposition issue */}
             {/* {noDistracting === "false" && ( */}
-            <div className={clsx(noDistracting !== "false" && "invisible")}>
+            <div
+              className={clsx(
+                noDistracting !== "false" &&
+                  noDistracting !== "chevronsonly" &&
+                  "invisible",
+              )}
+            >
               <AnimatePresence initial={false}>
                 {index > 0 && (
                   <>
@@ -488,7 +504,13 @@ export default function Carousel({
 
             {/* no effect on the nodistractions=true scrollposition issue */}
             {/* {noDistracting === "false" && ( */}
-            <div className={clsx(noDistracting !== "false" && "invisible")}>
+            <div
+              className={clsx(
+                noDistracting !== "false" &&
+                  noDistracting !== "chevronsonly" &&
+                  "invisible",
+              )}
+            >
               <AnimatePresence initial={false}>
                 {index + 1 < images.length && (
                   <ChevronButton
@@ -511,7 +533,9 @@ export default function Carousel({
           <div
             className={clsx(
               "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
-              noDistracting === "true" && "invisible",
+              noDistracting !== "false" &&
+                noDistracting !== "imagesonly" &&
+                "invisible",
             )}
           >
             <motion.div
