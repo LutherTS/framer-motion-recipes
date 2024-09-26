@@ -372,28 +372,26 @@ export default function Carousel({
     }
   }, [index, objectFitting, width, images]);
 
-  /* FLASH IDEA
-  There's also improvements on idleness which could be made here like hiding everything when idle in fact... 1. this could circumvene my current bug when noDistractions = true and it could handle controls on mobile at the same time.
-  To put it simply, it's no longer hiding this, hiding that... It's everything is hidden when idle as a start point.
-  */
+  // to hide the top controls and mouse when idle
 
-  const obj = {};
+  const [topControlsVisible, setTopControlsVisible] = useState(true);
 
-  // to hide the mouse when idle
-
+  // a tiny bug here where the mouse remains when hovering on the top buttons
   const onIdle = () => {
+    setTopControlsVisible(false);
     document.getElementById(CAROUSEL)!.style.cursor = "none";
   };
 
   const onActive = () => {
+    setTopControlsVisible(true);
     document.getElementById(CAROUSEL)!.style.cursor = "auto";
   };
 
   useIdleTimer({
-    timeout: 2_000,
+    timeout: 3_000,
     onIdle,
     onActive,
-    events: ["mousemove", "touchstart"],
+    events: ["mousemove", "mousedown", "touchstart"],
   });
 
   // to track when all animations are still active
@@ -501,39 +499,46 @@ export default function Carousel({
               </motion.div>
             </div>
 
-            <ChevronButton
-              isLeft={true}
-              isCenter={false}
-              handleClick={() => {
-                // unnecessarily but we never know
-                if (debouncedParamsingScrollPosition.isPending()) return;
-                rotateNoDistracting("right");
-              }}
-            >
-              <PhotoIcon />
-            </ChevronButton>
-            <ChevronButton
-              isLeft={false}
-              isCenter={false}
-              handleClick={() => {
-                if (debouncedParamsingScrollPosition.isPending()) return;
-                rotateObjectFitting("right");
-              }}
-            >
-              {(() => {
-                switch (objectFitting) {
-                  case "cover":
-                    return <ArrowsPointingInIcon />;
-                  case "contain":
-                    return <ArrowsPointingOutIcon />;
-                  case "scroll":
-                    if (isDefaultDirectory) return <PhotoIcon />;
-                    else return <ArrowsPointingInIcon />;
-                  default:
-                    return null;
-                }
-              })()}
-            </ChevronButton>
+            <div className={clsx(!topControlsVisible && "hidden")}>
+              <ControlButton
+                isLeft={true}
+                isCenter={false}
+                handleClick={() => {
+                  // unnecessarily but we never know
+                  if (debouncedParamsingScrollPosition.isPending()) return;
+                  rotateNoDistracting("right");
+                }}
+              >
+                {noDistracting === "true" ? (
+                  <CubeIcon />
+                ) : (
+                  <CubeTransparentIcon />
+                )}
+              </ControlButton>
+              <ControlButton
+                isLeft={false}
+                isCenter={false}
+                handleClick={() => {
+                  if (debouncedParamsingScrollPosition.isPending()) return;
+                  rotateObjectFitting("right");
+                }}
+              >
+                {(() => {
+                  switch (objectFitting) {
+                    case "cover":
+                      return <ArrowsPointingInIcon />;
+                    case "contain":
+                      return <ArrowsPointingOutIcon />;
+                    case "scroll":
+                      if (isDefaultDirectory) return <PhotoIcon />;
+                      else return <ArrowsPointingInIcon />;
+                    default:
+                      return null;
+                  }
+                })()}
+                {/* https://medium.com/nerd-for-tech/a-case-to-switch-using-switch-statements-in-react-e83e01154f60 */}
+              </ControlButton>
+            </div>
 
             {/* no effect on the nodistractions=true scrollposition issue */}
             {/* {noDistracting === "false" && ( */}
@@ -541,13 +546,13 @@ export default function Carousel({
               className={clsx(
                 noDistracting !== "false" &&
                   noDistracting !== "chevronsonly" &&
-                  "invisible",
+                  "hidden",
               )}
             >
               <AnimatePresence initial={false}>
                 {index > 0 && (
                   <>
-                    <ChevronButton
+                    <ControlButton
                       isLeft={true}
                       isCenter={true}
                       handleClick={() => {
@@ -558,25 +563,13 @@ export default function Carousel({
                       }}
                     >
                       <ChevronLeftIcon />
-                    </ChevronButton>
+                    </ControlButton>
                   </>
                 )}
               </AnimatePresence>
-            </div>
-            {/* )} */}
-
-            {/* no effect on the nodistractions=true scrollposition issue */}
-            {/* {noDistracting === "false" && ( */}
-            <div
-              className={clsx(
-                noDistracting !== "false" &&
-                  noDistracting !== "chevronsonly" &&
-                  "invisible",
-              )}
-            >
               <AnimatePresence initial={false}>
                 {index + 1 < images.length && (
-                  <ChevronButton
+                  <ControlButton
                     isLeft={false}
                     isCenter={true}
                     handleClick={() => {
@@ -585,7 +578,7 @@ export default function Carousel({
                     }}
                   >
                     <ChevronRightIcon />
-                  </ChevronButton>
+                  </ControlButton>
                 )}
               </AnimatePresence>
             </div>
@@ -599,7 +592,7 @@ export default function Carousel({
               "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
               noDistracting !== "false" &&
                 noDistracting !== "imagesonly" &&
-                "invisible",
+                "hidden",
             )}
           >
             <motion.div
@@ -676,6 +669,35 @@ export default function Carousel({
         </div>
       </MotionConfig>
     </div>
+  );
+}
+
+function ControlButton({
+  children,
+  isLeft,
+  isCenter,
+  handleClick,
+}: Readonly<{
+  children: React.ReactNode;
+  isLeft: boolean;
+  isCenter: boolean;
+  handleClick: MouseEventHandler<HTMLButtonElement>;
+}>) {
+  return (
+    <motion.button
+      initial={{
+        opacity: 0,
+      }}
+      animate={{ opacity: isCenter ? 0.6 : 0.3 }}
+      exit={{ opacity: 0, pointerEvents: "none" }}
+      whileHover={{ opacity: 0.8 }}
+      // whileTap here considers pressing Enter to be whileTap, even though I have it with preventDefault() via useKeypress
+      whileTap={{ scale: 0.9, transition: {} }}
+      className={`absolute ${isCenter ? "top-1/2" : "top-6"} -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
+      onClick={handleClick}
+    >
+      {children}
+    </motion.button>
   );
 }
 
@@ -768,32 +790,41 @@ function PhotoIcon() {
   );
 }
 
-function ChevronButton({
-  children,
-  isLeft,
-  isCenter,
-  handleClick,
-}: Readonly<{
-  children: React.ReactNode;
-  isLeft: boolean;
-  isCenter: boolean;
-  handleClick: MouseEventHandler<HTMLButtonElement>;
-}>) {
+function CubeTransparentIcon() {
   return (
-    <motion.button
-      initial={{
-        opacity: 0,
-      }}
-      animate={{ opacity: 0.6 }}
-      exit={{ opacity: 0, pointerEvents: "none" }}
-      whileHover={{ opacity: 0.8 }}
-      // whileTap here considers pressing Enter to be whileTap, even though I have it with preventDefault() via useKeypress
-      whileTap={{ scale: 0.9, transition: {} }}
-      className={`absolute ${isCenter ? "top-1/2" : "top-6"} -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
-      onClick={handleClick}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="size-6"
     >
-      {children}
-    </motion.button>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m21 7.5-2.25-1.313M21 7.5v2.25m0-2.25-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3 2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75 2.25-1.313M12 21.75V19.5m0 2.25-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25"
+      />
+    </svg>
+  );
+}
+
+function CubeIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={1.5}
+      stroke="currentColor"
+      className="size-6"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"
+      />
+    </svg>
   );
 }
 
