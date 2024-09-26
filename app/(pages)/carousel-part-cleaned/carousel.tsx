@@ -242,8 +242,9 @@ export default function Carousel({
   const setIndexLast = () => paramsingIndex(images.length - 1);
   const setIndexSelected = (i: number) => paramsingIndex(i);
 
-  // With "w", "W" the flow goes on it own because no shiftKey is "w" and with shiftKey is "W". Clever coincidence.
-  useKeypress(["ArrowLeft", "w", "W"], (event: KeyboardEvent) => {
+  // With "w", "W" the flow goes on it own because no shiftKey is "w" and with shiftKey is "W". Clever coincidence. ...That being said I'm cancelling the whole left-size-of-the-keyboard flow. Letters there are heavy browser shortcuts and should not be touched.
+  // ...But one way or the other here I need to free "Enter" and "Backspace"
+  useKeypress("ArrowLeft", (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -253,18 +254,26 @@ export default function Carousel({
       return back();
     }
 
+    if (event.altKey) {
+      return rotateNoDistracting("right");
+    }
+
     if (index > 0) {
       if (event.shiftKey) setIndexMinusTen(index);
       else setIndexMinusOne(index);
     }
   });
 
-  useKeypress(["ArrowRight", "c", "C"], (event: KeyboardEvent) => {
+  useKeypress("ArrowRight", (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
     if (event.metaKey) {
       return forward();
+    }
+
+    if (event.altKey) {
+      return rotateNoDistracting("left");
     }
 
     if (index < images.length - 1) {
@@ -279,9 +288,13 @@ export default function Carousel({
   And now maybe I can reduce the debounce time to something not humanly noticeable. Nope, it's unrelated. This is something else I'll be able to handle with Framer Motion-based scrolling I hope.
   */
 
-  useKeypress(["ArrowUp", "s", "S"], (event: KeyboardEvent) => {
+  useKeypress("ArrowUp", (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
+
+    if (event.altKey) {
+      return rotateObjectFitting("right");
+    }
 
     if (event.shiftKey) {
       setIndexFirst();
@@ -297,9 +310,13 @@ export default function Carousel({
     }
   });
 
-  useKeypress(["ArrowDown", "x", "X"], (event: KeyboardEvent) => {
+  useKeypress("ArrowDown", (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
+
+    if (event.altKey) {
+      return rotateObjectFitting("left");
+    }
 
     if (event.shiftKey) {
       setIndexLast();
@@ -315,21 +332,21 @@ export default function Carousel({
     }
   });
 
-  useKeypress(["Backspace", "q", "Q"], (event: KeyboardEvent) => {
-    event.preventDefault();
-    if (debouncedParamsingScrollPosition.isPending()) return;
+  // useKeypress("Backspace", (event: KeyboardEvent) => {
+  //   event.preventDefault();
+  //   if (debouncedParamsingScrollPosition.isPending()) return;
 
-    if (event.shiftKey) rotateNoDistracting("left");
-    else rotateNoDistracting("right");
-  });
+  //   if (event.shiftKey) rotateNoDistracting("left");
+  //   else rotateNoDistracting("right");
+  // });
 
-  useKeypress(["Enter", "d", "D"], (event: KeyboardEvent) => {
-    event.preventDefault();
-    if (debouncedParamsingScrollPosition.isPending()) return;
+  // useKeypress("Enter", (event: KeyboardEvent) => {
+  //   event.preventDefault();
+  //   if (debouncedParamsingScrollPosition.isPending()) return;
 
-    if (event.shiftKey) rotateObjectFitting("left");
-    else rotateObjectFitting("right");
-  });
+  //   if (event.shiftKey) rotateObjectFitting("left");
+  //   else rotateObjectFitting("right");
+  // });
 
   // useKeypress for selecting image sources
 
