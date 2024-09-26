@@ -55,8 +55,8 @@ const clientParamSafeting = (
   }
 };
 
-// No idea why console.logs got printed six times in Carousel sometimes.
-// There's also been some inconsistencies with interruptability.
+// Console.logs got printed six times in Carousel sometimes.
+// Some inconsistencies with interruptability especially in production.
 export default function Carousel({
   images,
   isDefaultDirectory,
