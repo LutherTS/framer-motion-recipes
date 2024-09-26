@@ -372,6 +372,13 @@ export default function Carousel({
     }
   }, [index, objectFitting, width, images]);
 
+  /* FLASH IDEA
+  There's also improvements on idleness which could be made here like hiding everything when idle in fact... 1. this could circumvene my current bug when noDistractions = true and it could handle controls on mobile at the same time.
+  To put it simply, it's no longer hiding this, hiding that... It's everything is hidden when idle as a start point.
+  */
+
+  const obj = {};
+
   // to hide the mouse when idle
 
   const onIdle = () => {
@@ -386,7 +393,7 @@ export default function Carousel({
     timeout: 2_000,
     onIdle,
     onActive,
-    events: ["mousemove"],
+    events: ["mousemove", "touchstart"],
   });
 
   // to track when all animations are still active
@@ -494,6 +501,40 @@ export default function Carousel({
               </motion.div>
             </div>
 
+            <ChevronButton
+              isLeft={true}
+              isCenter={false}
+              handleClick={() => {
+                // unnecessarily but we never know
+                if (debouncedParamsingScrollPosition.isPending()) return;
+                rotateNoDistracting("right");
+              }}
+            >
+              <PhotoIcon />
+            </ChevronButton>
+            <ChevronButton
+              isLeft={false}
+              isCenter={false}
+              handleClick={() => {
+                if (debouncedParamsingScrollPosition.isPending()) return;
+                rotateObjectFitting("right");
+              }}
+            >
+              {(() => {
+                switch (objectFitting) {
+                  case "cover":
+                    return <ArrowsPointingInIcon />;
+                  case "contain":
+                    return <ArrowsPointingOutIcon />;
+                  case "scroll":
+                    if (isDefaultDirectory) return <PhotoIcon />;
+                    else return <ArrowsPointingInIcon />;
+                  default:
+                    return null;
+                }
+              })()}
+            </ChevronButton>
+
             {/* no effect on the nodistractions=true scrollposition issue */}
             {/* {noDistracting === "false" && ( */}
             <div
@@ -508,6 +549,7 @@ export default function Carousel({
                   <>
                     <ChevronButton
                       isLeft={true}
+                      isCenter={true}
                       handleClick={() => {
                         // unnecessarily but we never know
                         if (debouncedParamsingScrollPosition.isPending())
@@ -536,6 +578,7 @@ export default function Carousel({
                 {index + 1 < images.length && (
                   <ChevronButton
                     isLeft={false}
+                    isCenter={true}
                     handleClick={() => {
                       if (debouncedParamsingScrollPosition.isPending()) return;
                       setIndexPlusOne(index);
@@ -674,13 +717,66 @@ function ChevronRightIcon() {
   );
 }
 
+function ArrowsPointingInIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="size-6"
+    >
+      <path
+        fillRule="evenodd"
+        d="M3.22 3.22a.75.75 0 0 1 1.06 0l3.97 3.97V4.5a.75.75 0 0 1 1.5 0V9a.75.75 0 0 1-.75.75H4.5a.75.75 0 0 1 0-1.5h2.69L3.22 4.28a.75.75 0 0 1 0-1.06Zm17.56 0a.75.75 0 0 1 0 1.06l-3.97 3.97h2.69a.75.75 0 0 1 0 1.5H15a.75.75 0 0 1-.75-.75V4.5a.75.75 0 0 1 1.5 0v2.69l3.97-3.97a.75.75 0 0 1 1.06 0ZM3.75 15a.75.75 0 0 1 .75-.75H9a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-2.69l-3.97 3.97a.75.75 0 0 1-1.06-1.06l3.97-3.97H4.5a.75.75 0 0 1-.75-.75Zm10.5 0a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-2.69l3.97 3.97a.75.75 0 1 1-1.06 1.06l-3.97-3.97v2.69a.75.75 0 0 1-1.5 0V15Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+function ArrowsPointingOutIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="size-6"
+    >
+      <path
+        fillRule="evenodd"
+        d="M15 3.75a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0V5.56l-3.97 3.97a.75.75 0 1 1-1.06-1.06l3.97-3.97h-2.69a.75.75 0 0 1-.75-.75Zm-12 0A.75.75 0 0 1 3.75 3h4.5a.75.75 0 0 1 0 1.5H5.56l3.97 3.97a.75.75 0 0 1-1.06 1.06L4.5 5.56v2.69a.75.75 0 0 1-1.5 0v-4.5Zm11.47 11.78a.75.75 0 1 1 1.06-1.06l3.97 3.97v-2.69a.75.75 0 0 1 1.5 0v4.5a.75.75 0 0 1-.75.75h-4.5a.75.75 0 0 1 0-1.5h2.69l-3.97-3.97Zm-4.94-1.06a.75.75 0 0 1 0 1.06L5.56 19.5h2.69a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 1 1.5 0v2.69l3.97-3.97a.75.75 0 0 1 1.06 0Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
+function PhotoIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="size-6"
+    >
+      <path
+        fillRule="evenodd"
+        d="M1.5 6a2.25 2.25 0 0 1 2.25-2.25h16.5A2.25 2.25 0 0 1 22.5 6v12a2.25 2.25 0 0 1-2.25 2.25H3.75A2.25 2.25 0 0 1 1.5 18V6ZM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0 0 21 18v-1.94l-2.69-2.689a1.5 1.5 0 0 0-2.12 0l-.88.879.97.97a.75.75 0 1 1-1.06 1.06l-5.16-5.159a1.5 1.5 0 0 0-2.12 0L3 16.061Zm10.125-7.81a1.125 1.125 0 1 1 2.25 0 1.125 1.125 0 0 1-2.25 0Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
 function ChevronButton({
   children,
   isLeft,
+  isCenter,
   handleClick,
 }: Readonly<{
   children: React.ReactNode;
   isLeft: boolean;
+  isCenter: boolean;
   handleClick: MouseEventHandler<HTMLButtonElement>;
 }>) {
   return (
@@ -693,7 +789,7 @@ function ChevronButton({
       whileHover={{ opacity: 0.8 }}
       // whileTap here considers pressing Enter to be whileTap, even though I have it with preventDefault() via useKeypress
       whileTap={{ scale: 0.9, transition: {} }}
-      className={`absolute top-1/2 -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
+      className={`absolute ${isCenter ? "top-1/2" : "top-6"} -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
       onClick={handleClick}
     >
       {children}
