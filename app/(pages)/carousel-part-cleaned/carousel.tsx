@@ -210,6 +210,10 @@ export default function Carousel({
     replace(`${pathname}?${params.toString()}`);
   };
 
+  /* FLASH IDEA
+  rotateNoDistracting("right") and rotateObjectFitting("right") need to have their own buttons on the top-left and the top-right of the screen respectively.
+  */
+
   const rotateNoDistracting = (direction: "left" | "right") =>
     rotateParams(direction, NODISTRACTIONS, noDistractings, noDistracting);
 
