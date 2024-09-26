@@ -4,12 +4,12 @@ import { Suspense } from "react";
 
 import Carousel from "./carousel";
 
-const DEFAULT_DIRECTORY = "./public/images0";
-
 const IMAGES_SET_LIMIT = {
   prod: 1,
   dev: 9,
 } as const;
+
+const DEFAULT_DIRECTORY = "./public/images0";
 
 export default async function Page({
   searchParams,
@@ -24,6 +24,8 @@ export default async function Page({
     process.env.NODE_ENV === "production"
       ? IMAGES_SET_LIMIT.prod
       : IMAGES_SET_LIMIT.dev;
+
+  // let limit = IMAGES_SET_LIMIT.prod;
 
   if (imagesSet < 0 || imagesSet > limit) imagesSet = 0;
 
@@ -49,11 +51,12 @@ export default async function Page({
   images = imagesForSorting.map((e) => e[0]);
   // console.log(images);
 
-  /* Replacing the copypasted multiple images. */
+  /* Replacing the copypasted multiple images (ONLY FOR DEFAULT DIRECTORY). */
   const imagesDynamized = (x: number) => {
     return Array.from(
       { length: 6 * x },
-      (_, i) => `/images0/${(i % 6) + 1}.jpeg?${Math.ceil((i + 1) / 6)}`,
+      (_, i) =>
+        `/${directory.split("/").at(-1)}/${(i % 6) + 1}.jpeg?${Math.ceil((i + 1) / 6)}`,
     );
   };
 

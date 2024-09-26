@@ -2,6 +2,7 @@
 
 import { MouseEventHandler, useEffect, useRef, useState } from "react";
 import {
+  ReadonlyURLSearchParams,
   redirect,
   usePathname,
   useRouter,
@@ -29,7 +30,7 @@ let collapsedAspectRatio = 1 / 3;
 let gap = 4;
 let fullMargin = 12 - gap;
 
-const IMAGES = "images";
+// const IMAGES = "images"; // now hardcoded in useKeypress(numberKeys
 const PAGE = "page";
 const SCROLLPOSITION = "scrollposition";
 const WINDOWWIDTH = "windowwidth";
@@ -39,6 +40,20 @@ const OBJECTFIT = "objectfit";
 const SCROLLID = "to-be-scrolled";
 const IMAGEID = "image-";
 const CAROUSEL = "carousel";
+
+const clientParamSafeting = (
+  condition: boolean,
+  key: string,
+  value: number,
+  searchParams: ReadonlyURLSearchParams,
+  pathname: string,
+) => {
+  if (condition) {
+    const params = new URLSearchParams(searchParams);
+    params.set(key, value.toString());
+    redirect(`${pathname}?${params.toString()}`);
+  }
+};
 
 // No idea why console.logs got printed six times in Carousel sometimes.
 // There's also been some inconsistencies with interruptability.
@@ -50,15 +65,21 @@ export default function Carousel({
   isDefaultDirectory: boolean;
 }) {
   const pathname = usePathname();
-  const { push, replace, back, forward } = useRouter(); // push instead of replace to go back and forth in the browser's history, now only for pages, replace for other parameters
   const searchParams = useSearchParams();
+  const { push, replace, back, forward } = useRouter(); // push instead of replace to go back and forth in the browser's history, now only for pages, replace for other parameters
 
-  const currentPage = Number(searchParams.get(PAGE)) || 0;
-  if (currentPage > images.length - 1) {
-    const params = new URLSearchParams(searchParams);
-    params.set(PAGE, (images.length - 1).toString());
-    redirect(`${pathname}?${params.toString()}`); // redirect is full refresh... but I think it's appropriate because it considers the situation as the error that it is
-  }
+  const currentPage = Math.floor(Number(searchParams.get(PAGE))) || 0;
+  clientParamSafeting(currentPage < 0, PAGE, 0, searchParams, pathname);
+  const maxPage = images.length - 1;
+  clientParamSafeting(
+    currentPage > maxPage,
+    PAGE,
+    maxPage,
+    searchParams,
+    pathname,
+  );
+
+  // clientParamSafeting isn't that imperative for currentScrollPosition and currentWindowWidth because the browser and the Web API handle the edge cases correctly and acceptly respectively for both cases
 
   const currentScrollPosition = Number(searchParams.get(SCROLLPOSITION)) || 0;
 
@@ -72,37 +93,42 @@ export default function Carousel({
       ? width
       : 1;
 
-  const currentNoDistraction =
-    searchParams.get(NODISTRACTIONS) === "imagesonly"
-      ? "imagesonly"
-      : searchParams.get(NODISTRACTIONS) === "chevronsonly"
-        ? "chevronsonly"
-        : searchParams.get(NODISTRACTIONS) === "true"
-          ? "true"
-          : searchParams.get(NODISTRACTIONS) === "false"
-            ? "false"
-            : "false"; // default false
+  let currentNoDistraction: "false" | "imagesonly" | "chevronsonly" | "true" =
+    "false";
+
+  switch (searchParams.get(NODISTRACTIONS)) {
+    case "false":
+      currentNoDistraction = "false";
+      break;
+    case "imagesonly":
+      currentNoDistraction = "imagesonly";
+      break;
+    case "chevronsonly":
+      currentNoDistraction = "chevronsonly";
+      break;
+    case "true":
+      currentNoDistraction = "true";
+      break;
+    default:
+      break;
+  }
 
   let currentObjectFit: "cover" | "contain" | "scroll" = isDefaultDirectory
     ? "cover"
     : "contain";
 
-  if (isDefaultDirectory) {
-    searchParams.get(OBJECTFIT) === "contain"
-      ? (currentObjectFit = "contain")
-      : searchParams.get(OBJECTFIT) === "scroll"
-        ? (currentObjectFit = "scroll")
-        : searchParams.get(OBJECTFIT) === "cover"
-          ? (currentObjectFit = "cover")
-          : (currentObjectFit = "cover");
-  } else {
-    searchParams.get(OBJECTFIT) === "contain"
-      ? (currentObjectFit = "contain")
-      : searchParams.get(OBJECTFIT) === "scroll"
-        ? (currentObjectFit = "scroll")
-        : searchParams.get(OBJECTFIT) === "cover"
-          ? (currentObjectFit = "contain")
-          : (currentObjectFit = "contain"); // voluntarily removed cover
+  switch (searchParams.get(OBJECTFIT)) {
+    case "contain":
+      currentObjectFit = "contain";
+      break;
+    case "scroll":
+      currentObjectFit = "scroll";
+      break;
+    case "cover":
+      if (isDefaultDirectory) currentObjectFit = "cover";
+      break;
+    default:
+      break;
   }
 
   let index = currentPage;
@@ -143,7 +169,6 @@ export default function Carousel({
   const { scrollY } = useScroll({ container: carouselRef });
 
   useMotionValueEvent(scrollY, "change", (current) => {
-    // console.log({ current, animationsSet });
     if (animationsSet.size === 0 && objectFitting === "scroll")
       debouncedParamsingScrollPosition(current);
   }); // https://www.framer.com/motion/use-scroll/##element-scroll
@@ -217,7 +242,8 @@ export default function Carousel({
   const setIndexLast = () => paramsingIndex(images.length - 1);
   const setIndexSelected = (i: number) => paramsingIndex(i);
 
-  useKeypress("ArrowLeft", (event: KeyboardEvent) => {
+  // With "w", "W" the flow goes on it own because no shiftKey is "w" and with shiftKey is "W". Clever coincidence.
+  useKeypress(["ArrowLeft", "w", "W"], (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -233,7 +259,7 @@ export default function Carousel({
     }
   });
 
-  useKeypress("ArrowRight", (event: KeyboardEvent) => {
+  useKeypress(["ArrowRight", "c", "C"], (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -253,7 +279,7 @@ export default function Carousel({
   And now maybe I can reduce the debounce time to something not humanly noticeable. Nope, it's unrelated. This is something else I'll be able to handle with Framer Motion-based scrolling I hope.
   */
 
-  useKeypress("ArrowUp", (event: KeyboardEvent) => {
+  useKeypress(["ArrowUp", "s", "S"], (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -271,7 +297,7 @@ export default function Carousel({
     }
   });
 
-  useKeypress("ArrowDown", (event: KeyboardEvent) => {
+  useKeypress(["ArrowDown", "x", "X"], (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -289,7 +315,7 @@ export default function Carousel({
     }
   });
 
-  useKeypress("Backspace", (event: KeyboardEvent) => {
+  useKeypress(["Backspace", "q", "Q"], (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -297,7 +323,7 @@ export default function Carousel({
     else rotateNoDistracting("right");
   });
 
-  useKeypress("Enter", (event: KeyboardEvent) => {
+  useKeypress(["Enter", "d", "D"], (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
@@ -333,12 +359,6 @@ export default function Carousel({
           );
         })
         .then(() => {
-          // replacing width by window.innerWidth because width begins at 0, but to no avail so far, I believe because animations are still ongoing (animationsSet.size > 0)
-          // console.log({ width, windowWidth, scrollPosition, animationsSet });
-          // console.log(window.innerWidth);
-          // console.log(document.getElementById(SCROLLID));
-          // the problem was specific to nodistractions=true
-
           // I think it works...
           document.getElementById(SCROLLID)!.scrollTo({
             // And with just a bit of math...
@@ -780,4 +800,42 @@ PREVIOUS:
 // const params = new URLSearchParams(searchParams);
 // params.set(IMAGES, event.key);
 // push(`${pathname}?${params.toString()}`);
+REPLACED BY A SWITCH STATEMENT:
+// here however, a switch statement could be better
+// because each value could have it's own condition where different
+if (isDefaultDirectory) {
+  searchParams.get(OBJECTFIT) === "contain"
+    ? (currentObjectFit = "contain")
+    : searchParams.get(OBJECTFIT) === "scroll"
+      ? (currentObjectFit = "scroll")
+      : searchParams.get(OBJECTFIT) === "cover"
+        ? (currentObjectFit = "cover")
+        : (currentObjectFit = "cover");
+} else {
+  searchParams.get(OBJECTFIT) === "contain"
+    ? (currentObjectFit = "contain")
+    : searchParams.get(OBJECTFIT) === "scroll"
+      ? (currentObjectFit = "scroll")
+      : searchParams.get(OBJECTFIT) === "cover"
+        ? (currentObjectFit = "contain")
+        : (currentObjectFit = "contain"); // voluntarily removed cover
+// a switch statement is better but I kinda like that for now
+// what's more, it goes to show that these options should be limited
+// ...No. If for some reason I want to do something with isDefaultDirectory, I'm gonna need to refactor this as a switch statement. So it's best if it's just a if statement to begin with.
+const currentNoDistraction =
+  searchParams.get(NODISTRACTIONS) === "imagesonly"
+    ? "imagesonly"
+    : searchParams.get(NODISTRACTIONS) === "chevronsonly"
+      ? "chevronsonly"
+      : searchParams.get(NODISTRACTIONS) === "true"
+        ? "true"
+        : searchParams.get(NODISTRACTIONS) === "false"
+          ? "false"
+          : "false"; // default false
+EXTRA CONSOLE.LOGS
+// replacing width by window.innerWidth because width begins at 0, but to no avail so far, I believe because animations are still ongoing (animationsSet.size > 0)
+// console.log({ width, windowWidth, scrollPosition, animationsSet });
+// console.log(window.innerWidth);
+// console.log(document.getElementById(SCROLLID));
+// the problem was specific to nodistractions=true
 */
