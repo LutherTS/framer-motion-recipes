@@ -437,7 +437,7 @@ export default function Carousel({
   return (
     <div
       id={CAROUSEL}
-      // removed max-h-screen
+      // vh from h-screen are messing stuff on mobile but... not a priority
       className="flex h-screen items-center overflow-y-hidden bg-black"
     >
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
