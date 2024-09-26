@@ -438,11 +438,11 @@ export default function Carousel({
     <div
       id={CAROUSEL}
       // removed max-h-screen
-      className="flex items-center overflow-y-hidden bg-black"
+      className="flex h-screen items-center overflow-y-hidden bg-black"
     >
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-        {/* removed mx-auto h-full */}
-        <div className="flex flex-col">
+        {/* removed mx-auto */}
+        <div className="flex h-full flex-col">
           <div
             className="h-screen overflow-x-hidden"
             id={SCROLLID}
