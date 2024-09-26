@@ -242,8 +242,6 @@ export default function Carousel({
   const setIndexLast = () => paramsingIndex(images.length - 1);
   const setIndexSelected = (i: number) => paramsingIndex(i);
 
-  // With "w", "W" the flow goes on it own because no shiftKey is "w" and with shiftKey is "W". Clever coincidence. ...That being said I'm cancelling the whole left-size-of-the-keyboard flow. Letters there are heavy browser shortcuts and should not be touched.
-  // ...But one way or the other here I need to free "Enter" and "Backspace"
   useKeypress("ArrowLeft", (event: KeyboardEvent) => {
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
@@ -254,12 +252,12 @@ export default function Carousel({
       return back();
     }
 
-    if (event.altKey) {
+    if (event.shiftKey) {
       return rotateNoDistracting("right");
     }
 
     if (index > 0) {
-      if (event.shiftKey) setIndexMinusTen(index);
+      if (event.altKey) setIndexMinusTen(index);
       else setIndexMinusOne(index);
     }
   });
@@ -272,12 +270,12 @@ export default function Carousel({
       return forward();
     }
 
-    if (event.altKey) {
+    if (event.shiftKey) {
       return rotateNoDistracting("left");
     }
 
     if (index < images.length - 1) {
-      if (event.shiftKey) setIndexPlusTen(index);
+      if (event.altKey) setIndexPlusTen(index);
       else setIndexPlusOne(index);
     }
   });
@@ -292,11 +290,11 @@ export default function Carousel({
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
-    if (event.altKey) {
+    if (event.shiftKey) {
       return rotateObjectFitting("right");
     }
 
-    if (event.shiftKey) {
+    if (event.altKey) {
       setIndexFirst();
     } else if (event.metaKey) {
       scrollToTop();
@@ -314,11 +312,11 @@ export default function Carousel({
     event.preventDefault();
     if (debouncedParamsingScrollPosition.isPending()) return;
 
-    if (event.altKey) {
+    if (event.shiftKey) {
       return rotateObjectFitting("left");
     }
 
-    if (event.shiftKey) {
+    if (event.altKey) {
       setIndexLast();
     } else if (event.metaKey) {
       scrollToBottom();
@@ -331,22 +329,6 @@ export default function Carousel({
         });
     }
   });
-
-  // useKeypress("Backspace", (event: KeyboardEvent) => {
-  //   event.preventDefault();
-  //   if (debouncedParamsingScrollPosition.isPending()) return;
-
-  //   if (event.shiftKey) rotateNoDistracting("left");
-  //   else rotateNoDistracting("right");
-  // });
-
-  // useKeypress("Enter", (event: KeyboardEvent) => {
-  //   event.preventDefault();
-  //   if (debouncedParamsingScrollPosition.isPending()) return;
-
-  //   if (event.shiftKey) rotateObjectFitting("left");
-  //   else rotateObjectFitting("right");
-  // });
 
   // useKeypress for selecting image sources
 
