@@ -426,7 +426,7 @@ export default function Carousel({
 
   In a future remake of the project after further Framer Motion knowledge:
   - remove objectFitting cover // now removed voluntarily
-  - making scrollToTop and other in-between-pages scrolling indiscriminate across different page heights
+  - making scrollToTop and other in-between-pages scrolling indiscriminate across different page heights // fixed surprisingly
   - keyboard tabbing navigation and focus-visible styles
   (But that's going to be a huge chunk.)
   - an images folder selector based on the folders in /public
@@ -437,18 +437,11 @@ export default function Carousel({
   return (
     <div
       id={CAROUSEL}
-      // vh from h-screen are messing stuff on mobile but... not a priority
       className="relative flex h-[100dvh] items-center overflow-y-hidden bg-black"
     >
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
-        {/* removed mx-auto */}
         <div className="flex h-full flex-col">
-          <div
-            // removed h-screen
-            className="overflow-x-hidden"
-            id={SCROLLID}
-            ref={carouselRef}
-          >
+          <div className="overflow-x-hidden" id={SCROLLID} ref={carouselRef}>
             <div className="overflow-hidden">
               <motion.div
                 className={`flex`}
@@ -501,7 +494,12 @@ export default function Carousel({
               </motion.div>
             </div>
 
-            <div className={clsx(!topControlsVisible && "hidden")}>
+            <div
+              className={clsx(
+                "absolute inset-x-0 top-6",
+                !topControlsVisible && "hidden",
+              )}
+            >
               <ControlButton
                 isLeft={true}
                 isCenter={false}
@@ -543,6 +541,8 @@ export default function Carousel({
             </div>
 
             {/* no effect on the nodistractions=true scrollposition issue */}
+            {/* now it's nodistractions=chevronsonly that has the issue... sometimes... and back to nodistractions=true... weird */}
+
             {/* {noDistracting === "false" && ( */}
             <div
               className={clsx(
@@ -558,7 +558,6 @@ export default function Carousel({
                       isLeft={true}
                       isCenter={true}
                       handleClick={() => {
-                        // unnecessarily but we never know
                         if (debouncedParamsingScrollPosition.isPending())
                           return;
                         setIndexMinusOne(index);
@@ -587,7 +586,6 @@ export default function Carousel({
             {/* )} */}
           </div>
 
-          {/* no effect on the nodistractions=true scrollposition issue */}
           {/* {(noDistracting === "false" || noDistracting === "imagesonly") && ( */}
           <div
             className={clsx(
@@ -693,10 +691,14 @@ function ControlButton({
       animate={{ opacity: isCenter ? 0.6 : 0.3 }}
       exit={{ opacity: 0, pointerEvents: "none" }}
       whileHover={{ opacity: 0.8 }}
-      // whileTap here considers pressing Enter to be whileTap, even though I have it with preventDefault() via useKeypress
+      // whileTap here considers pressing Enter to be whileTap, even though I have it with preventDefault() via useKeypress // which is no longer an issue since I'm no longer using Enter or Backspace
       whileTap={{ scale: 0.9, transition: {} }}
-      // removed -mt-4
-      className={`absolute ${isCenter ? "top-1/2" : "top-6"} flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
+      className={clsx(
+        `absolute flex size-8 items-center justify-center rounded-full bg-white`,
+        isCenter && "top-1/2",
+        isLeft && "left-3",
+        !isLeft && "right-3",
+      )}
       onClick={handleClick}
     >
       {children}
