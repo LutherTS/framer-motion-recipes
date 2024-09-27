@@ -438,13 +438,14 @@ export default function Carousel({
     <div
       id={CAROUSEL}
       // vh from h-screen are messing stuff on mobile but... not a priority
-      className="flex h-screen items-center overflow-y-hidden bg-black"
+      className="relative flex h-[100dvh] items-center overflow-y-hidden bg-black"
     >
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
         {/* removed mx-auto */}
         <div className="flex h-full flex-col">
           <div
-            className="h-screen overflow-x-hidden"
+            // removed h-screen
+            className="overflow-x-hidden"
             id={SCROLLID}
             ref={carouselRef}
           >
@@ -488,8 +489,9 @@ export default function Carousel({
                         className={clsx(
                           "w-full",
                           objectFitting === "contain" &&
-                            "h-screen object-contain",
-                          objectFitting === "cover" && "h-screen object-cover",
+                            "h-[100dvh] object-contain",
+                          objectFitting === "cover" &&
+                            "h-[100dvh] object-cover",
                           objectFitting === "scroll" && "",
                         )}
                       />
