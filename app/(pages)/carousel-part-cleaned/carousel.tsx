@@ -695,7 +695,8 @@ function ControlButton({
       whileHover={{ opacity: 0.8 }}
       // whileTap here considers pressing Enter to be whileTap, even though I have it with preventDefault() via useKeypress
       whileTap={{ scale: 0.9, transition: {} }}
-      className={`absolute ${isCenter ? "top-1/2" : "top-6"} -mt-4 flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
+      // removed -mt-4
+      className={`absolute ${isCenter ? "top-1/2" : "top-6"} flex size-8 items-center justify-center rounded-full bg-white ${isLeft ? "left-3" : "right-3"}`}
       onClick={handleClick}
     >
       {children}
