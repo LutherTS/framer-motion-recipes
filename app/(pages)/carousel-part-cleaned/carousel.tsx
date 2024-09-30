@@ -8,6 +8,7 @@ import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
+import { NavigateOptions } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 import {
   AnimatePresence,
@@ -55,8 +56,45 @@ const clientParamSafeting = (
   }
 };
 
+const rotateParams = (
+  direction: "left" | "right",
+  paramsKey: string,
+  paramsArray: readonly string[],
+  paramsValue: string,
+  searchParams: ReadonlyURLSearchParams,
+  pathname: string,
+  replace: (href: string, options?: NavigateOptions) => void,
+) => {
+  const params = new URLSearchParams(searchParams);
+  if (direction === "right")
+    params.set(
+      paramsKey,
+      paramsArray.at(
+        paramsArray.indexOf(paramsValue) + 1 > paramsArray.length - 1
+          ? 0
+          : paramsArray.indexOf(paramsValue) + 1,
+      )!,
+    );
+  else
+    params.set(
+      paramsKey,
+      // .at() handles rotation on its own for negative values
+      paramsArray.at(paramsArray.indexOf(paramsValue) - 1)!,
+    );
+  replace(`${pathname}?${params.toString()}`);
+};
+
+const scrollToTop = () =>
+  document.getElementById(SCROLLID)!.scrollTo({ top: 0, behavior: "smooth" });
+
+const scrollToBottom = () =>
+  document.getElementById(SCROLLID)!.scrollTo({
+    top: document.getElementById(SCROLLID)!.scrollHeight,
+    behavior: "smooth",
+  });
+
 // Console.logs got printed six times in Carousel sometimes.
-// Some inconsistencies with interruptability especially in production.
+// Some inconsistencies with interruptability especially in production. ...Which is probably due to the state lifted to the URL.
 export default function Carousel({
   images,
   isDefaultDirectory,
@@ -79,7 +117,7 @@ export default function Carousel({
     pathname,
   );
 
-  // clientParamSafeting isn't that imperative for currentScrollPosition and currentWindowWidth because the browser and the Web API handle the edge cases correctly and acceptly respectively for both cases
+  // clientParamSafeting isn't that imperative for currentScrollPosition and currentWindowWidth because the browser and the Web API handle the edge cases correctly and acceptably respectively for both cases
 
   const currentScrollPosition = Number(searchParams.get(SCROLLPOSITION)) || 0;
 
@@ -134,9 +172,8 @@ export default function Carousel({
   let index = currentPage;
   let scrollPosition = currentScrollPosition;
   let windowWidth = currentWindowWidth;
-  let noDistracting: "false" | "imagesonly" | "chevronsonly" | "true" =
-    currentNoDistraction;
-  let objectFitting: "cover" | "contain" | "scroll" = currentObjectFit;
+  let noDistracting = currentNoDistraction;
+  let objectFitting = currentObjectFit;
 
   const paramsingIndex = (index: number) => {
     const params = new URLSearchParams(searchParams);
@@ -185,37 +222,20 @@ export default function Carousel({
   // voluntarily removed cover
   const objectFittingsWithoutCover = ["contain", "scroll"] as const;
 
-  const rotateParams = (
-    direction: "left" | "right",
-    paramsKey: string,
-    paramsArray: readonly string[],
-    paramsValue: string,
-  ) => {
-    const params = new URLSearchParams(searchParams);
-    if (direction === "right")
-      params.set(
-        paramsKey,
-        paramsArray.at(
-          paramsArray.indexOf(paramsValue) + 1 > paramsArray.length - 1
-            ? 0
-            : paramsArray.indexOf(paramsValue) + 1,
-        )!,
-      );
-    else
-      params.set(
-        paramsKey,
-        // .at() handles rotation on its own for negative values
-        paramsArray.at(paramsArray.indexOf(paramsValue) - 1)!,
-      );
-    replace(`${pathname}?${params.toString()}`);
-  };
-
   /* FLASH IDEA
-  rotateNoDistracting("right") and rotateObjectFitting("right") need to have their own buttons on the top-left and the top-right of the screen respectively.
+  rotateNoDistracting("right") and rotateObjectFitting("right") need to have their own buttons on the top-left and the top-right of the screen respectively, especially for mobile. // DONE.
   */
 
   const rotateNoDistracting = (direction: "left" | "right") =>
-    rotateParams(direction, NODISTRACTIONS, noDistractings, noDistracting);
+    rotateParams(
+      direction,
+      NODISTRACTIONS,
+      noDistractings,
+      noDistracting,
+      searchParams,
+      pathname,
+      replace,
+    );
 
   const rotateObjectFitting = (direction: "left" | "right") => {
     rotateParams(
@@ -223,17 +243,11 @@ export default function Carousel({
       OBJECTFIT,
       isDefaultDirectory ? objectFittingsWithCover : objectFittingsWithoutCover,
       objectFitting,
+      searchParams,
+      pathname,
+      replace,
     );
   };
-
-  const scrollToTop = () =>
-    document.getElementById(SCROLLID)!.scrollTo({ top: 0, behavior: "smooth" });
-
-  const scrollToBottom = () =>
-    document.getElementById(SCROLLID)!.scrollTo({
-      top: document.getElementById(SCROLLID)!.scrollHeight,
-      behavior: "smooth",
-    });
 
   // setIndexFunctionNames kept in reference to original state lifted to URL
   const setIndexPlusOne = (index: number) => paramsingIndex(index + 1);
@@ -344,9 +358,9 @@ export default function Carousel({
     push(`${pathname}?images=${event.key}`);
   });
 
-  let objectFittingScrollHeight = useMotionValue(height);
-
   // core useEffect // await decoding, rational scroll positioning
+
+  let objectFittingScrollHeight = useMotionValue(height);
 
   useEffect(() => {
     if (objectFitting === "scroll") {

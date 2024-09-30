@@ -11,6 +11,16 @@ const IMAGES_SET_LIMIT = {
 
 const DEFAULT_DIRECTORY = "./public/images0";
 
+// Replacing the copypasted multiple images (ONLY FOR DEFAULT DIRECTORY).
+const imagesDynamized = (x: number, directory: string) => {
+  return Array.from(
+    { length: 6 * x },
+    (_, i) =>
+      // jpeg because I know the default directory is made of jpeg files
+      `/${directory.split("/").at(-1)}/${(i % 6) + 1}.jpeg?${Math.ceil((i + 1) / 6)}`,
+  );
+};
+
 export default async function Page({
   searchParams,
 }: {
@@ -18,6 +28,7 @@ export default async function Page({
     images?: string;
   };
 }) {
+  // 0, here and below, is the default and refers to the default directory
   let imagesSet = Math.floor(Number(searchParams?.images)) || 0;
 
   let limit =
@@ -27,6 +38,7 @@ export default async function Page({
 
   // let limit = IMAGES_SET_LIMIT.prod;
 
+  // 0 is also the floor limit for all the imagesSet currently available
   if (imagesSet < 0 || imagesSet > limit) imagesSet = 0;
 
   let images: string[];
@@ -42,7 +54,7 @@ export default async function Page({
   const directoryPath = directory.split("/").slice(2).join("/");
   images = files.map((filePath) => `/${directoryPath}/${filePath}`);
 
-  /* Sorting numerically. All files need to have a number format, and should only be of an image format, with no folders inside. Since this is a personal and internal project, I'm not going to handle errors for now. */
+  /* Sorting numerically. All files need to have a number format, and should only be of one image format, with no folders inside. Since this is a personal and internal project, I'm not going to handle errors for now. */
   const imagesForSorting: [string, number][] = images.map((e) => [
     e,
     +e.split("/").at(-1)?.split(".").at(0)!,
@@ -51,18 +63,9 @@ export default async function Page({
   images = imagesForSorting.map((e) => e[0]);
   // console.log(images);
 
-  /* Replacing the copypasted multiple images (ONLY FOR DEFAULT DIRECTORY). */
-  const imagesDynamized = (x: number) => {
-    return Array.from(
-      { length: 6 * x },
-      (_, i) =>
-        `/${directory.split("/").at(-1)}/${(i % 6) + 1}.jpeg?${Math.ceil((i + 1) / 6)}`,
-    );
-  };
-
   const isDefaultDirectory = directory === DEFAULT_DIRECTORY;
 
-  if (isDefaultDirectory) images = imagesDynamized(10);
+  if (isDefaultDirectory) images = imagesDynamized(10, directory);
   // console.log(images);
 
   return (
