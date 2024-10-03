@@ -28,7 +28,7 @@ import { useDebouncedCallback } from "use-debounce";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
-let gap = 4;
+let gap = 4; // messed up in Google Chrome
 let fullMargin = 12 - gap;
 
 // const IMAGES = "images"; // now hardcoded in useKeypress(numberKeys
