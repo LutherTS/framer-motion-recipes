@@ -28,7 +28,7 @@ import { useDebouncedCallback } from "use-debounce";
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
-let gap = 4; // messed up in Google Chrome
+let gap = 4;
 let fullMargin = 12 - gap;
 
 // const IMAGES = "images"; // now hardcoded in useKeypress(numberKeys
@@ -611,11 +611,13 @@ export default function Carousel({
           >
             <motion.div
               initial={false}
-              animate={{
+              style={{
+                aspectRatio: fullAspectRatio,
+                gap: `${gap}%`,
                 x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
               }}
-              style={{ aspectRatio: fullAspectRatio, gap: `${gap}%` }}
-              className="flex"
+              className="flex min-w-0"
+              // https://buildui.com/recipes/animated-carousel
             >
               {images.map((imageUrl, i) => {
                 let image = index === i ? "full" : "collapsed";
@@ -870,7 +872,7 @@ Long story short, this too takes time.
 Previous inline comments:
 That responsive width is going to be complicated, but not impossible. The buttons are still rightfully placed at w-64 for example, and the animate x does move to 100% the size of the images, but now it's the images whose size is not being responsive (Well, with full on images just worked just fine.)
 I'll have to test but... Now problem solved.
-magic w-[80rem] matching max-w-7xl above
+magic w-[80rem]() matching max-w-7xl above
 w-full fixed all of my responsive problems it seems
 no overflow-x-auto because it messes up the calculations
 and I'm actually not down with scrolling though, I'd rather Shift does the speeding
@@ -987,4 +989,11 @@ EXTRA CONSOLE.LOGS
 // console.log(window.innerWidth);
 // console.log(document.getElementById(SCROLLID));
 // the problem was specific to nodistractions=true
+...
+// x could actually just be in the style property
+// animate={{
+//   x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
+// }}
+...
+// trying min-w-0 // THERE IT IS.
 */

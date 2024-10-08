@@ -4,12 +4,12 @@ import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import { MouseEventHandler, useState } from "react";
 
 let images = [
-  "/images/1.jpeg",
-  "/images/2.jpeg",
-  "/images/3.jpeg",
-  "/images/4.jpeg",
-  "/images/5.jpeg",
-  "/images/6.jpeg",
+  "/images0/1.jpeg",
+  "/images0/2.jpeg",
+  "/images0/3.jpeg",
+  "/images0/4.jpeg",
+  "/images0/5.jpeg",
+  "/images0/6.jpeg",
 ];
 
 export default function Page() {
