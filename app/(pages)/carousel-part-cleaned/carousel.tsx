@@ -605,7 +605,7 @@ export default function Carousel({
           {/* {(noDistracting === "false" || noDistracting === "imagesonly") && ( */}
           <div
             className={clsx(
-              "absolute inset-x-0 bottom-6 z-50 flex h-14 justify-center overflow-x-hidden",
+              "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
               noDistracting !== "false" &&
                 noDistracting !== "imagesonly" &&
                 "hidden",
