@@ -22,7 +22,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      // I literally need to have overscroll-none on the HTML for any browser other than Firefox (specifically Safari, Chrome and I think Edge) to respect my carousel.
+      className="overscroll-none"
+    >
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>

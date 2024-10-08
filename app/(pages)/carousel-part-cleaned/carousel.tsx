@@ -465,6 +465,7 @@ export default function Carousel({
                     objectFitting === "scroll"
                       ? objectFittingScrollHeight
                       : "auto",
+                  // x: `-${index * 100}%`, // Safari again
                 }}
                 onAnimationStart={(definition: AnimationDefinition) =>
                   onStart(definition)
@@ -604,6 +605,8 @@ export default function Carousel({
           <div
             className={clsx(
               "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
+              // trying to address thumbnails not appearing on Safari...
+              // "absolute mb-6 flex h-14 justify-center overflow-hidden",
               noDistracting !== "false" &&
                 noDistracting !== "imagesonly" &&
                 "hidden",
