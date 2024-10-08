@@ -605,9 +605,7 @@ export default function Carousel({
           {/* {(noDistracting === "false" || noDistracting === "imagesonly") && ( */}
           <div
             className={clsx(
-              "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
-              // trying to address thumbnails not appearing on Safari...
-              // "absolute mb-6 flex h-14 justify-center overflow-hidden",
+              "absolute inset-x-0 bottom-6 z-50 flex h-14 justify-center overflow-x-hidden",
               noDistracting !== "false" &&
                 noDistracting !== "imagesonly" &&
                 "hidden",
@@ -641,12 +639,16 @@ export default function Carousel({
                     variants={{
                       full: {
                         aspectRatio: fullAspectRatio,
+                        // with Safari I need to explicit the width
+                        width: 14 * 4 * fullAspectRatio,
                         marginLeft: `${fullMargin}%`,
                         marginRight: `${fullMargin}%`,
                         opacity: 1,
                       },
                       collapsed: {
                         aspectRatio: collapsedAspectRatio,
+                        // width is the height times the aspect ratio
+                        width: 14 * 4 * collapsedAspectRatio,
                         marginLeft: 0,
                         marginRight: 0,
                         opacity: 0.5,
