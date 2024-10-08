@@ -465,6 +465,7 @@ export default function Carousel({
                     objectFitting === "scroll"
                       ? objectFittingScrollHeight
                       : "auto",
+                  // animations break in production when they're on style
                   // x: `-${index * 100}%`, // Safari again
                 }}
                 onAnimationStart={(definition: AnimationDefinition) =>
@@ -614,10 +615,13 @@ export default function Carousel({
           >
             <motion.div
               initial={false}
+              animate={{
+                x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
+              }}
               style={{
                 aspectRatio: fullAspectRatio,
                 gap: `${gap}%`,
-                x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
+                // x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
               }}
               className="flex min-w-0"
               // https://buildui.com/recipes/animated-carousel
