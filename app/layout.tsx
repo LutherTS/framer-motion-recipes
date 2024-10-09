@@ -25,6 +25,7 @@ export default function RootLayout({
     <html
       lang="en"
       // I literally need to have overscroll-none on the HTML for any browser other than Firefox (specifically Safari, Chrome and I think Edge) to respect my carousel.
+      // ...And Chrome still gets my carousel disrespected.
       className="overscroll-none"
     >
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
