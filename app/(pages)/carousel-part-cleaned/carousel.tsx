@@ -14,6 +14,7 @@ import {
   AnimatePresence,
   AnimationDefinition,
   MotionConfig,
+  MotionValue,
   motion,
   useMotionValue,
   useMotionValueEvent,
@@ -24,7 +25,9 @@ import useKeypress from "react-use-keypress";
 import clsx from "clsx";
 import useWindowSize from "@buildinams/use-window-size";
 import { useIdleTimer } from "react-idle-timer";
-import { useDebouncedCallback } from "use-debounce";
+import { DebouncedState, useDebouncedCallback } from "use-debounce";
+
+// Data
 
 let fullAspectRatio = 3 / 2;
 let collapsedAspectRatio = 1 / 3;
@@ -41,6 +44,8 @@ const OBJECTFIT = "objectfit";
 const SCROLLID = "to-be-scrolled";
 const IMAGEID = "image-";
 const CAROUSEL = "carousel";
+
+// Utilities
 
 const clientParamSafeting = (
   condition: boolean,
@@ -93,8 +98,9 @@ const scrollToBottom = () =>
     behavior: "smooth",
   });
 
-// Console.logs got printed six times in Carousel sometimes.
-// Some inconsistencies with interruptability especially in production. ...Which is probably due to the state lifted to the URL.
+// Core Component
+
+// Some inconsistencies with interruptability especially in production. Which is probably due to the state lifted to the URL.
 export default function Carousel({
   images,
   isDefaultDirectory,
@@ -456,246 +462,345 @@ export default function Carousel({
       <MotionConfig transition={{ duration: 0.7, ease: [0.32, 0.72, 0, 1] }}>
         <div className="flex h-full flex-col">
           <div className="overflow-x-hidden" id={SCROLLID} ref={carouselRef}>
-            <div className="overflow-hidden">
-              <motion.div
-                className={`flex`}
-                animate={{ x: `-${index * 100}%` }}
-                style={{
-                  height:
-                    objectFitting === "scroll"
-                      ? objectFittingScrollHeight
-                      : "auto",
-                  // animations break in production when they're on style
-                  // x: `-${index * 100}%`, // Safari again
-                }}
-                onAnimationStart={(definition: AnimationDefinition) =>
-                  onStart(definition)
-                }
-                onAnimationComplete={(definition: AnimationDefinition) =>
-                  onComplete(definition)
-                }
-              >
-                {images.map((imageUrl, i) => {
-                  let image = index === i ? "full" : "collapsed";
+            <Images
+              index={index}
+              objectFitting={objectFitting}
+              objectFittingScrollHeight={objectFittingScrollHeight}
+              onStart={onStart}
+              onComplete={onComplete}
+              images={images}
+            />
 
-                  return (
-                    <motion.div
-                      animate={image}
-                      variants={{
-                        full: {},
-                        collapsed: {
-                          opacity: 0.3,
-                        },
-                      }}
-                      key={imageUrl}
-                      src={imageUrl}
-                      className="flex h-fit w-full shrink-0"
-                    >
-                      <img
-                        id={`${IMAGEID + i}`}
-                        src={imageUrl}
-                        alt=""
-                        className={clsx(
-                          "w-full",
-                          objectFitting === "contain" &&
-                            "h-[100dvh] object-contain",
-                          objectFitting === "cover" &&
-                            "h-[100dvh] object-cover",
-                          objectFitting === "scroll" && "",
-                        )}
-                      />
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            </div>
+            <TopControls
+              topControlsVisible={topControlsVisible}
+              debouncedParamsingScrollPosition={
+                debouncedParamsingScrollPosition
+              }
+              rotateNoDistracting={rotateNoDistracting}
+              noDistracting={noDistracting}
+              rotateObjectFitting={rotateObjectFitting}
+              objectFitting={objectFitting}
+              isDefaultDirectory={isDefaultDirectory}
+            />
 
-            <div
-              className={clsx(
-                "absolute inset-x-0 top-6",
-                !topControlsVisible && "hidden",
-              )}
-            >
-              <ControlButton
-                isLeft={true}
-                isCenter={false}
-                handleClick={() => {
-                  // unnecessarily but we never know
-                  if (debouncedParamsingScrollPosition.isPending()) return;
-                  rotateNoDistracting("right");
-                }}
-              >
-                {noDistracting === "true" ? (
-                  <CubeIcon />
-                ) : (
-                  <CubeTransparentIcon />
-                )}
-              </ControlButton>
-              <ControlButton
-                isLeft={false}
-                isCenter={false}
-                handleClick={() => {
-                  if (debouncedParamsingScrollPosition.isPending()) return;
-                  rotateObjectFitting("right");
-                }}
-              >
-                {(() => {
-                  switch (objectFitting) {
-                    case "cover":
-                      return <ArrowsPointingInIcon />;
-                    case "contain":
-                      return <ArrowsPointingOutIcon />;
-                    case "scroll":
-                      if (isDefaultDirectory) return <PhotoIcon />;
-                      else return <ArrowsPointingInIcon />;
-                    default:
-                      return null;
-                  }
-                })()}
-                {/* https://medium.com/nerd-for-tech/a-case-to-switch-using-switch-statements-in-react-e83e01154f60 */}
-              </ControlButton>
-            </div>
-
-            {/* no effect on the nodistractions=true scrollposition issue */}
-            {/* now it's nodistractions=chevronsonly that has the issue... sometimes... and back to nodistractions=true... weird */}
-
-            {/* {noDistracting === "false" && ( */}
-            <div
-              className={clsx(
-                noDistracting !== "false" &&
-                  noDistracting !== "chevronsonly" &&
-                  "hidden",
-              )}
-            >
-              <AnimatePresence initial={false}>
-                {index > 0 && (
-                  <>
-                    <ControlButton
-                      isLeft={true}
-                      isCenter={true}
-                      handleClick={() => {
-                        if (debouncedParamsingScrollPosition.isPending())
-                          return;
-                        setIndexMinusOne(index);
-                      }}
-                    >
-                      <ChevronLeftIcon />
-                    </ControlButton>
-                  </>
-                )}
-              </AnimatePresence>
-              <AnimatePresence initial={false}>
-                {index + 1 < images.length && (
-                  <ControlButton
-                    isLeft={false}
-                    isCenter={true}
-                    handleClick={() => {
-                      if (debouncedParamsingScrollPosition.isPending()) return;
-                      setIndexPlusOne(index);
-                    }}
-                  >
-                    <ChevronRightIcon />
-                  </ControlButton>
-                )}
-              </AnimatePresence>
-            </div>
-            {/* )} */}
+            <MiddleControls
+              noDistracting={noDistracting}
+              index={index}
+              debouncedParamsingScrollPosition={
+                debouncedParamsingScrollPosition
+              }
+              setIndexMinusOne={setIndexMinusOne}
+              images={images}
+              setIndexPlusOne={setIndexPlusOne}
+            />
           </div>
 
-          {/* {(noDistracting === "false" || noDistracting === "imagesonly") && ( */}
-          <div
-            className={clsx(
-              "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
-              noDistracting !== "false" &&
-                noDistracting !== "imagesonly" &&
-                "hidden",
-            )}
-          >
-            <motion.div
-              initial={false}
-              animate={{
-                x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
-              }}
-              style={{
-                aspectRatio: fullAspectRatio,
-                gap: `${gap}%`,
-                // x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
-              }}
-              className="flex min-w-0"
-              // https://buildui.com/recipes/animated-carousel
-            >
-              {images.map((imageUrl, i) => {
-                let image = index === i ? "full" : "collapsed";
-                let imageHover = index === i ? "fullHover" : "collapsedHover";
-                let imageTap = index === i ? "fullTap" : "collapsedTap";
-
-                return (
-                  <motion.div
-                    key={imageUrl}
-                    initial={false}
-                    animate={image}
-                    whileHover={imageHover}
-                    whileTap={imageTap}
-                    variants={{
-                      full: {
-                        aspectRatio: fullAspectRatio,
-                        // with Safari I need to explicit the width
-                        width: 14 * 4 * fullAspectRatio,
-                        marginLeft: `${fullMargin}%`,
-                        marginRight: `${fullMargin}%`,
-                        opacity: 1,
-                      },
-                      collapsed: {
-                        aspectRatio: collapsedAspectRatio,
-                        // width is the height times the aspect ratio
-                        width: 14 * 4 * collapsedAspectRatio,
-                        marginLeft: 0,
-                        marginRight: 0,
-                        opacity: 0.5,
-                      },
-                      fullHover: {},
-                      collapsedHover: {
-                        opacity: 0.8,
-                        transition: { duration: 0.1 },
-                      },
-                      fullTap: {},
-                      collapsedTap: {
-                        opacity: 0.9,
-                        transition: { duration: 0.1 },
-                      },
-                    }}
-                    className="flex shrink-0 justify-center"
-                  >
-                    {(objectFitting === "contain" ||
-                      objectFitting === "scroll") && (
-                      // For accessibility, that will need to be a button, preferrably for all objectFittings.
-                      <img
-                        src={imageUrl}
-                        alt=""
-                        className="h-full cursor-pointer object-cover"
-                        onClick={() => setIndexSelected(i)}
-                      />
-                    )}
-                    {objectFitting === "cover" && (
-                      <button
-                        className={`h-full w-full bg-cover bg-center`}
-                        style={{
-                          backgroundImage: `url("${imageUrl}")`,
-                        }}
-                        onClick={() => setIndexSelected(i)}
-                      />
-                    )}
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </div>
-          {/* )} */}
+          <ThumbnailsBottomControls
+            noDistracting={noDistracting}
+            index={index}
+            images={images}
+            objectFitting={objectFitting}
+            setIndexSelected={setIndexSelected}
+          />
         </div>
       </MotionConfig>
     </div>
   );
 }
+
+// Leading Components
+
+function Images({
+  index,
+  objectFitting,
+  objectFittingScrollHeight,
+  onStart,
+  onComplete,
+  images,
+}: {
+  index: number;
+  objectFitting: "cover" | "contain" | "scroll";
+  objectFittingScrollHeight: MotionValue<number>;
+  onStart: (definition: AnimationDefinition) => void;
+  onComplete: (definition: AnimationDefinition) => void;
+  images: string[];
+}) {
+  return (
+    <div className="overflow-hidden">
+      <motion.div
+        className={`flex`}
+        animate={{ x: `-${index * 100}%` }}
+        style={{
+          height:
+            objectFitting === "scroll" ? objectFittingScrollHeight : "auto",
+          // animations break in production when they're on style
+          // x: `-${index * 100}%`, // Safari again
+        }}
+        onAnimationStart={(definition: AnimationDefinition) =>
+          onStart(definition)
+        }
+        onAnimationComplete={(definition: AnimationDefinition) =>
+          onComplete(definition)
+        }
+      >
+        {images.map((imageUrl, i) => {
+          let image = index === i ? "full" : "collapsed";
+
+          return (
+            <motion.div
+              animate={image}
+              variants={{
+                full: {},
+                collapsed: {
+                  opacity: 0.3,
+                },
+              }}
+              key={imageUrl}
+              src={imageUrl}
+              className="flex h-fit w-full shrink-0"
+            >
+              <img
+                id={`${IMAGEID + i}`}
+                src={imageUrl}
+                alt=""
+                className={clsx(
+                  "w-full",
+                  objectFitting === "contain" && "h-[100dvh] object-contain",
+                  objectFitting === "cover" && "h-[100dvh] object-cover",
+                  objectFitting === "scroll" && "",
+                )}
+              />
+            </motion.div>
+          );
+        })}
+      </motion.div>
+    </div>
+  );
+}
+
+function TopControls({
+  topControlsVisible,
+  debouncedParamsingScrollPosition,
+  rotateNoDistracting,
+  noDistracting,
+  rotateObjectFitting,
+  objectFitting,
+  isDefaultDirectory,
+}: {
+  topControlsVisible: boolean;
+  debouncedParamsingScrollPosition: DebouncedState<
+    (scrollPosition: number) => void
+  >;
+  rotateNoDistracting: (direction: "left" | "right") => void;
+  noDistracting: "false" | "true" | "imagesonly" | "chevronsonly";
+  rotateObjectFitting: (direction: "left" | "right") => void;
+  objectFitting: "cover" | "contain" | "scroll";
+  isDefaultDirectory: boolean;
+}) {
+  return (
+    <div
+      className={clsx(
+        "absolute inset-x-0 top-6",
+        !topControlsVisible && "hidden",
+      )}
+    >
+      <ControlButton
+        isLeft={true}
+        isCenter={false}
+        handleClick={() => {
+          // unnecessarily but we never know
+          if (debouncedParamsingScrollPosition.isPending()) return;
+          rotateNoDistracting("right");
+        }}
+      >
+        {noDistracting === "true" ? <CubeIcon /> : <CubeTransparentIcon />}
+      </ControlButton>
+      <ControlButton
+        isLeft={false}
+        isCenter={false}
+        handleClick={() => {
+          if (debouncedParamsingScrollPosition.isPending()) return;
+          rotateObjectFitting("right");
+        }}
+      >
+        {(() => {
+          switch (objectFitting) {
+            case "cover":
+              return <ArrowsPointingInIcon />;
+            case "contain":
+              return <ArrowsPointingOutIcon />;
+            case "scroll":
+              if (isDefaultDirectory) return <PhotoIcon />;
+              else return <ArrowsPointingInIcon />;
+            default:
+              return null;
+          }
+        })()}
+        {/* https://medium.com/nerd-for-tech/a-case-to-switch-using-switch-statements-in-react-e83e01154f60 */}
+      </ControlButton>
+    </div>
+  );
+}
+
+function MiddleControls({
+  noDistracting,
+  index,
+  debouncedParamsingScrollPosition,
+  setIndexMinusOne,
+  images,
+  setIndexPlusOne,
+}: {
+  noDistracting: any;
+  index: any;
+  debouncedParamsingScrollPosition: any;
+  setIndexMinusOne: any;
+  images: string[];
+  setIndexPlusOne: any;
+}) {
+  return (
+    <div
+      className={clsx(
+        noDistracting !== "false" &&
+          noDistracting !== "chevronsonly" &&
+          "hidden",
+      )}
+    >
+      <AnimatePresence initial={false}>
+        {index > 0 && (
+          <>
+            <ControlButton
+              isLeft={true}
+              isCenter={true}
+              handleClick={() => {
+                if (debouncedParamsingScrollPosition.isPending()) return;
+                setIndexMinusOne(index);
+              }}
+            >
+              <ChevronLeftIcon />
+            </ControlButton>
+          </>
+        )}
+      </AnimatePresence>
+      <AnimatePresence initial={false}>
+        {index + 1 < images.length && (
+          <ControlButton
+            isLeft={false}
+            isCenter={true}
+            handleClick={() => {
+              if (debouncedParamsingScrollPosition.isPending()) return;
+              setIndexPlusOne(index);
+            }}
+          >
+            <ChevronRightIcon />
+          </ControlButton>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function ThumbnailsBottomControls({
+  noDistracting,
+  index,
+  images,
+  objectFitting,
+  setIndexSelected,
+}: {
+  noDistracting: any;
+  index: any;
+  images: string[];
+  objectFitting: any;
+  setIndexSelected: any;
+}) {
+  return (
+    <div
+      className={clsx(
+        "absolute inset-x-0 bottom-6 flex h-14 justify-center overflow-x-hidden",
+        noDistracting !== "false" && noDistracting !== "imagesonly" && "hidden",
+      )}
+    >
+      <motion.div
+        initial={false}
+        animate={{
+          x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
+        }}
+        style={{
+          aspectRatio: fullAspectRatio,
+          gap: `${gap}%`,
+          // x: `-${index * 100 * (collapsedAspectRatio / fullAspectRatio) + fullMargin + index * gap}%`,
+        }}
+        className="flex min-w-0"
+        // https://buildui.com/recipes/animated-carousel
+      >
+        {images.map((imageUrl, i) => {
+          let image = index === i ? "full" : "collapsed";
+          let imageHover = index === i ? "fullHover" : "collapsedHover";
+          let imageTap = index === i ? "fullTap" : "collapsedTap";
+
+          return (
+            <motion.div
+              key={imageUrl}
+              initial={false}
+              animate={image}
+              whileHover={imageHover}
+              whileTap={imageTap}
+              variants={{
+                full: {
+                  aspectRatio: fullAspectRatio,
+                  // with Safari I need to explicit the width
+                  width: 14 * 4 * fullAspectRatio,
+                  marginLeft: `${fullMargin}%`,
+                  marginRight: `${fullMargin}%`,
+                  opacity: 1,
+                },
+                collapsed: {
+                  aspectRatio: collapsedAspectRatio,
+                  // width is the height times the aspect ratio
+                  width: 14 * 4 * collapsedAspectRatio,
+                  marginLeft: 0,
+                  marginRight: 0,
+                  opacity: 0.5,
+                },
+                fullHover: {},
+                collapsedHover: {
+                  opacity: 0.8,
+                  transition: { duration: 0.1 },
+                },
+                fullTap: {},
+                collapsedTap: {
+                  opacity: 0.9,
+                  transition: { duration: 0.1 },
+                },
+              }}
+              className="flex shrink-0 justify-center"
+            >
+              {(objectFitting === "contain" || objectFitting === "scroll") && (
+                // For accessibility, that will need to be a button, preferrably for all objectFittings.
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="h-full cursor-pointer object-cover"
+                  onClick={() => setIndexSelected(i)}
+                />
+              )}
+              {objectFitting === "cover" && (
+                <button
+                  className={`h-full w-full bg-cover bg-center`}
+                  style={{
+                    backgroundImage: `url("${imageUrl}")`,
+                  }}
+                  onClick={() => setIndexSelected(i)}
+                />
+              )}
+            </motion.div>
+          );
+        })}
+      </motion.div>
+    </div>
+  );
+}
+
+// Supporting Components
 
 function ControlButton({
   children,
